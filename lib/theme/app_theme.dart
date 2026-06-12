@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const Color primaryBlue = Color(0xFF3266C7);
   static const Color accentGreen = Color(0xFF86EB84);
   static const Color secondaryBlue = Color(0xFF59A2D8);
-  
+
   static const Color bgMain = Color(0xFFFFFFFF);
   static const Color surfaceLight = Color(0xFFF4F7FA);
   static const Color textDark = Color(0xFF2D3748);
@@ -12,6 +13,8 @@ class AppTheme {
   static const Color borderColor = Color(0xFFE2E8F0);
 
   static ThemeData get lightTheme {
+    final base = GoogleFonts.plusJakartaSansTextTheme();
+
     return ThemeData(
       primaryColor: primaryBlue,
       scaffoldBackgroundColor: bgMain,
@@ -21,22 +24,94 @@ class AppTheme {
         surface: surfaceLight,
         error: Colors.red,
       ),
-      fontFamily: 'Inter',
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(color: textDark, fontWeight: FontWeight.bold),
-        titleLarge: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600, letterSpacing: -0.5),
-        bodyLarge: TextStyle(color: textDark),
-        bodyMedium: TextStyle(color: textSecondary),
+      textTheme: base.copyWith(
+        displayLarge: base.displayLarge?.copyWith(
+          color: primaryBlue,
+          fontWeight: FontWeight.bold,
+          letterSpacing: -1,
+        ),
+        displayMedium: base.displayMedium?.copyWith(
+          color: textDark,
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.5,
+        ),
+        headlineLarge: base.headlineLarge?.copyWith(
+          color: textDark,
+          fontWeight: FontWeight.bold,
+        ),
+        headlineMedium: base.headlineMedium?.copyWith(
+          color: textDark,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: base.titleLarge?.copyWith(
+          color: primaryBlue,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.5,
+        ),
+        titleMedium: base.titleMedium?.copyWith(
+          color: textDark,
+          fontWeight: FontWeight.w600,
+        ),
+        bodyLarge: base.bodyLarge?.copyWith(color: textDark),
+        bodyMedium: base.bodyMedium?.copyWith(color: textSecondary),
+        bodySmall: base.bodySmall?.copyWith(color: textSecondary),
+        labelLarge: base.labelLarge?.copyWith(
+          color: textDark,
+          fontWeight: FontWeight.w600,
+        ),
+        labelMedium: base.labelMedium?.copyWith(
+          color: textSecondary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: bgMain,
+        foregroundColor: primaryBlue,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: primaryBlue,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: accentGreen,
           foregroundColor: textDark,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          elevation: 2,
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          elevation: 0,
+          shadowColor: accentGreen.withValues(alpha: 0.4),
         ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryBlue,
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+          ),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: bgMain,
+        selectedItemColor: primaryBlue,
+        unselectedItemColor: textSecondary,
+        selectedLabelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -53,7 +128,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryBlue, width: 2),
         ),
-        hintStyle: const TextStyle(color: textSecondary),
+        hintStyle: GoogleFonts.plusJakartaSans(color: textSecondary),
       ),
       cardTheme: CardThemeData(
         color: bgMain,
