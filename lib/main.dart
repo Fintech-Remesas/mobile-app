@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'theme/app_theme.dart';
-import 'routes/app_router.dart';
 
-void main() {
+import 'config/routes/app_router.dart';
+import 'core/di/injection_container.dart';
+import 'theme/app_theme.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await init();
   runApp(const FintechRemittanceApp());
 }
 
 class FintechRemittanceApp extends StatelessWidget {
-  const FintechRemittanceApp({Key? key}) : super(key: key);
+  const FintechRemittanceApp({super.key});
 
   @override
   Widget build(BuildContext context) {
