@@ -1,20 +1,20 @@
+import '../../../../core/data/remittance_remote_datasource.dart';
 import '../../domain/entities/contact.dart';
 import '../../domain/entities/transaction_detail.dart';
 import '../../domain/repositories/transaction_repository.dart';
-import '../datasources/transaction_local_datasource.dart';
 
 class TransactionRepositoryImpl implements TransactionRepository {
-  final TransactionLocalDataSource localDataSource;
+  final RemittanceRemoteDataSource remoteDataSource;
 
-  TransactionRepositoryImpl({required this.localDataSource});
+  TransactionRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<Contact>> getContacts() {
-    return localDataSource.fetchContacts();
+  Future<List<Contact>> getContacts(String query) {
+    return remoteDataSource.searchContacts(query);
   }
 
   @override
   Future<TransactionDetail> getTransactionDetail(String id) {
-    return localDataSource.fetchTransactionDetail(id);
+    return remoteDataSource.fetchTransactionDetail(id);
   }
 }

@@ -27,7 +27,11 @@ class _LoginPageState extends State<LoginPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthLoginSuccess) {
-          context.go('/home');
+          if (state.needsKyc) {
+            context.go('/kyc-start');
+          } else {
+            context.go('/home');
+          }
         } else if (state is AuthFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
@@ -61,8 +65,8 @@ class _LoginPageState extends State<LoginPage> {
                           ? null
                           : () => context.read<AuthBloc>().add(
                                 LoginSubmitted(
-                                  email: _emailController.text,
-                                  password: _passwordController.text,
+                                  email: _emailController.text.trim(),
+                                  password: _passwordController.text.trim(),
                                 ),
                               ),
                       child: isLoading

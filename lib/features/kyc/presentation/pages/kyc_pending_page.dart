@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
-import '../bloc/kyc_bloc.dart';
 
 class KycPendingPage extends StatelessWidget {
   const KycPendingPage({super.key});
@@ -20,11 +17,8 @@ class KycPendingPage extends StatelessWidget {
             const Text('Reviewing documents...'),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () {
-                context.read<KycBloc>().add(const SimulateKycApproval());
-                context.go('/kyc-approved');
-              },
-              child: const Text('Simulate Approval'),
+              onPressed: () => context.go('/kyc-approved'),
+              child: const Text('Continue'),
             ),
           ],
         ),

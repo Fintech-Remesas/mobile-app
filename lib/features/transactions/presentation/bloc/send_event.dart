@@ -7,6 +7,11 @@ abstract class SendEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadContacts extends SendEvent {
-  const LoadContacts();
+class SearchContacts extends SendEvent {
+  final String query;
+
+  const SearchContacts(this.query);
+
+  @override
+  List<Object?> get props => [query];
 }

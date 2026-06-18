@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/contact.dart';
 import '../../domain/usecases/get_contacts.dart';
 
@@ -12,13 +11,21 @@ class SendBloc extends Bloc<SendEvent, SendState> {
   final GetContacts getContacts;
 
   SendBloc({required this.getContacts}) : super(const SendInitial()) {
-    on<LoadContacts>(_onLoadContacts);
+    on<SearchContacts>(_onSearchContacts);
   }
 
-  Future<void> _onLoadContacts(LoadContacts event, Emitter<SendState> emit) async {
+  Future<void> _onSearchContacts(
+    SearchContacts event,
+    Emitter<SendState> emit,
+  ) async {
+    if (event.query.trim().length < 2) {
+      emit(const SendLoaded([]));
+      return;
+    }
+
     emit(const SendLoading());
     try {
-      final contacts = await getContacts(const NoParams());
+      final contacts = await getContacts(GetContactsParams(query: event.query));
       emit(SendLoaded(contacts));
     } catch (e) {
       emit(SendError(e.toString()));

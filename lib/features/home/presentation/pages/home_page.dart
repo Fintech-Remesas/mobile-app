@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../core/widgets/error_state_view.dart';
 import '../bloc/home_bloc.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/quick_actions_row.dart';
@@ -30,18 +31,13 @@ class HomePage extends StatelessWidget {
           }
 
           if (state is HomeError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(state.message),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.read<HomeBloc>().add(const LoadHome()),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+            return ErrorStateView(
+              message: state.message,
+              statusCode: state.statusCode,
+              title: state.title,
+              endpoint: state.endpoint,
+              hint: state.hint,
+              onRetry: () => context.read<HomeBloc>().add(const LoadHome()),
             );
           }
 

@@ -32,9 +32,21 @@ class HomeLoaded extends HomeState {
 
 class HomeError extends HomeState {
   final String message;
+  final int? statusCode;
+  final String? title;
+  final String? endpoint;
+  final String? hint;
+  final Object? originalError;
 
-  const HomeError(this.message);
+  const HomeError({
+    required this.message,
+    this.statusCode,
+    this.title,
+    this.endpoint,
+    this.hint,
+    this.originalError,
+  });
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, statusCode, title, endpoint, hint];
 }

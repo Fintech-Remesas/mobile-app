@@ -1,14 +1,14 @@
+import '../../../../core/data/remittance_remote_datasource.dart';
 import '../../domain/entities/history_item.dart';
 import '../../domain/repositories/history_repository.dart';
-import '../datasources/history_local_datasource.dart';
 
 class HistoryRepositoryImpl implements HistoryRepository {
-  final HistoryLocalDataSource localDataSource;
+  final RemittanceRemoteDataSource remoteDataSource;
 
-  HistoryRepositoryImpl({required this.localDataSource});
+  HistoryRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<List<HistoryItem>> getTransactionHistory() {
-    return localDataSource.fetchHistory();
+    return remoteDataSource.fetchHistory();
   }
 }

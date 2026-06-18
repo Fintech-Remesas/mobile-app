@@ -1,20 +1,20 @@
+import '../../../../core/data/remittance_remote_datasource.dart';
 import '../../domain/entities/transaction_preview.dart';
 import '../../domain/entities/wallet_summary.dart';
 import '../../domain/repositories/home_repository.dart';
-import '../datasources/home_local_datasource.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
-  final HomeLocalDataSource localDataSource;
+  final RemittanceRemoteDataSource remoteDataSource;
 
-  HomeRepositoryImpl({required this.localDataSource});
+  HomeRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<WalletSummary> getWalletSummary() {
-    return localDataSource.fetchWalletSummary();
+    return remoteDataSource.fetchWalletSummary();
   }
 
   @override
   Future<List<TransactionPreview>> getRecentTransactions() {
-    return localDataSource.fetchRecentTransactions();
+    return remoteDataSource.fetchRecentTransactions();
   }
 }

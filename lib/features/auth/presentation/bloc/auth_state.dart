@@ -16,7 +16,12 @@ class AuthLoading extends AuthState {
 }
 
 class AuthLoginSuccess extends AuthState {
-  const AuthLoginSuccess();
+  final bool needsKyc;
+
+  const AuthLoginSuccess({required this.needsKyc});
+
+  @override
+  List<Object?> get props => [needsKyc];
 }
 
 class AuthRegisterSuccess extends AuthState {

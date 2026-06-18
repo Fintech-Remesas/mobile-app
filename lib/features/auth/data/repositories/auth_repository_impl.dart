@@ -1,14 +1,22 @@
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_local_datasource.dart';
+import '../datasources/auth_remote_datasource.dart';
+import '../models/user_me_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthLocalDataSource localDataSource;
+  final AuthRemoteDataSource remoteDataSource;
 
-  AuthRepositoryImpl({required this.localDataSource});
+  UserMeModel? _currentUser;
+
+  AuthRepositoryImpl({required this.remoteDataSource});
+
+  UserMeModel? get currentUser => _currentUser;
 
   @override
-  Future<void> login({required String email, required String password}) {
-    return localDataSource.login(email: email, password: password);
+  bool get needsKyc => _currentUser != null && !_currentUser!.canOperate;
+
+  @override
+  Future<void> login({required String email, required String password}) async {
+    _currentUser = await remoteDataSource.login(email: email, password: password);
   }
 
   @override
@@ -16,8 +24,8 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String phone,
     required String password,
-  }) {
-    return localDataSource.register(
+  }) async {
+    _currentUser = await remoteDataSource.register(
       email: email,
       phone: phone,
       password: password,
@@ -25,7 +33,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> verifyOtp({required String code}) {
-    return localDataSource.verifyOtp(code: code);
+  Future<void> verifyOtp({required String code}) async {
+    // Backend has no OTP endpoint yet — passthrough for UI compatibility.
   }
 }

@@ -12,7 +12,7 @@ class KycStartPage extends StatelessWidget {
     return BlocListener<KycBloc, KycState>(
       listener: (context, state) {
         if (state is KycSubmitted) {
-          context.go('/kyc-pending');
+          context.go('/kyc-approved');
         }
       },
       child: Scaffold(

@@ -14,11 +14,3 @@ class SubmitKycRequested extends KycEvent {
 class CheckKycStatusRequested extends KycEvent {
   const CheckKycStatusRequested();
 }
-
-class SimulateKycApproval extends KycEvent {
-  const SimulateKycApproval();
-}
-
-class SimulateKycRejection extends KycEvent {
-  const SimulateKycRejection();
-}

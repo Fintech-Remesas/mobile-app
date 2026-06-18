@@ -19,7 +19,11 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatted = _formatBalance(wallet.balance);
+    final isCount = wallet.currency == 'COUNT';
+    final label = isCount ? 'Your Remittances' : 'Available Balance';
+    final formatted = isCount
+        ? wallet.balance.toInt().toString()
+        : _formatBalance(wallet.balance);
 
     return Container(
       width: double.infinity,
@@ -33,10 +37,10 @@ class BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            'Available Balance',
+          Text(
+            label,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 15),
+            style: const TextStyle(color: Colors.white70, fontSize: 15),
           ),
           const SizedBox(height: 8),
           Text(

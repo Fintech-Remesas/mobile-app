@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/login.dart';
 import '../../domain/usecases/register_user.dart';
 import '../../domain/usecases/verify_otp.dart';
@@ -12,11 +13,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final Login login;
   final RegisterUser registerUser;
   final VerifyOtp verifyOtp;
+  final AuthRepository authRepository;
 
   AuthBloc({
     required this.login,
     required this.registerUser,
     required this.verifyOtp,
+    required this.authRepository,
   }) : super(const AuthInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
     on<RegisterSubmitted>(_onRegisterSubmitted);
@@ -30,7 +33,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
     try {
       await login(LoginParams(email: event.email, password: event.password));
-      emit(const AuthLoginSuccess());
+      emit(AuthLoginSuccess(needsKyc: authRepository.needsKyc));
     } catch (e) {
       emit(AuthFailure(e.toString()));
     }

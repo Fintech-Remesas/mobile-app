@@ -1,30 +1,32 @@
+import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
-import '../../features/auth/data/datasources/auth_local_datasource.dart';
+import '../data/remittance_remote_datasource.dart';
+import '../network/api_client.dart';
+import '../storage/token_storage.dart';
+import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/usecases/login.dart';
 import '../../features/auth/domain/usecases/register_user.dart';
 import '../../features/auth/domain/usecases/verify_otp.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../features/history/data/datasources/history_local_datasource.dart';
 import '../../features/history/data/repositories/history_repository_impl.dart';
 import '../../features/history/domain/repositories/history_repository.dart';
 import '../../features/history/domain/usecases/get_transaction_history.dart';
 import '../../features/history/presentation/bloc/history_bloc.dart';
-import '../../features/home/data/datasources/home_local_datasource.dart';
 import '../../features/home/data/repositories/home_repository_impl.dart';
 import '../../features/home/domain/repositories/home_repository.dart';
 import '../../features/home/domain/usecases/get_recent_transactions.dart';
 import '../../features/home/domain/usecases/get_wallet_summary.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
-import '../../features/kyc/data/datasources/kyc_local_datasource.dart';
+import '../../features/kyc/data/datasources/kyc_remote_datasource.dart';
 import '../../features/kyc/data/repositories/kyc_repository_impl.dart';
 import '../../features/kyc/domain/repositories/kyc_repository.dart';
 import '../../features/kyc/domain/usecases/check_kyc_status.dart';
 import '../../features/kyc/domain/usecases/submit_kyc.dart';
 import '../../features/kyc/presentation/bloc/kyc_bloc.dart';
-import '../../features/profile/data/datasources/profile_local_datasource.dart';
+import '../../features/profile/data/datasources/profile_remote_datasource.dart';
 import '../../features/profile/data/repositories/profile_repository_impl.dart';
 import '../../features/profile/domain/repositories/profile_repository.dart';
 import '../../features/profile/domain/usecases/get_profile.dart';
@@ -38,58 +40,62 @@ import '../../features/settings/domain/usecases/get_limits.dart';
 import '../../features/settings/domain/usecases/get_notifications.dart';
 import '../../features/settings/domain/usecases/toggle_biometric.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
-import '../../features/transactions/data/datasources/transaction_local_datasource.dart';
 import '../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../features/transactions/domain/usecases/get_contacts.dart';
 import '../../features/transactions/domain/usecases/get_transaction_detail.dart';
 import '../../features/transactions/presentation/bloc/send_bloc.dart';
 import '../../features/transactions/presentation/bloc/transaction_detail_bloc.dart';
-import '../data/mock_data_source.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  sl.registerLazySingleton(() => MockDataSource());
+  sl.registerLazySingleton(() => TokenStorage());
+  sl.registerLazySingleton(() => Dio());
+  sl.registerLazySingleton(
+    () => ApiClient(dio: sl(), tokenStorage: sl()),
+  );
+
+  // Shared remote data
+  sl.registerLazySingleton<RemittanceRemoteDataSource>(
+    () => RemittanceRemoteDataSourceImpl(apiClient: sl(), tokenStorage: sl()),
+  );
 
   // Auth
-  sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(mockDataSource: sl()),
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(apiClient: sl(), tokenStorage: sl()),
   );
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(localDataSource: sl()),
+    () => AuthRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => Login(sl()));
   sl.registerLazySingleton(() => RegisterUser(sl()));
   sl.registerLazySingleton(() => VerifyOtp(sl()));
   sl.registerFactory(
-    () => AuthBloc(login: sl(), registerUser: sl(), verifyOtp: sl()),
-  );
-
-  // KYC
-  sl.registerLazySingleton<KycLocalDataSourceImpl>(
-    () => KycLocalDataSourceImpl(mockDataSource: sl()),
-  );
-  sl.registerLazySingleton<KycRepositoryImpl>(
-    () => KycRepositoryImpl(localDataSource: sl()),
-  );
-  sl.registerLazySingleton<KycRepository>(() => sl<KycRepositoryImpl>());
-  sl.registerLazySingleton(() => SubmitKyc(sl()));
-  sl.registerLazySingleton(() => CheckKycStatus(sl()));
-  sl.registerFactory(
-    () => KycBloc(
-      submitKyc: sl(),
-      checkKycStatus: sl(),
-      repository: sl<KycRepositoryImpl>(),
+    () => AuthBloc(
+      login: sl(),
+      registerUser: sl(),
+      verifyOtp: sl(),
+      authRepository: sl(),
     ),
   );
 
-  // Home
-  sl.registerLazySingleton<HomeLocalDataSource>(
-    () => HomeLocalDataSourceImpl(mockDataSource: sl()),
+  // KYC
+  sl.registerLazySingleton<KycRemoteDataSource>(
+    () => KycRemoteDataSourceImpl(apiClient: sl(), tokenStorage: sl()),
   );
+  sl.registerLazySingleton<KycRepository>(
+    () => KycRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => SubmitKyc(sl()));
+  sl.registerLazySingleton(() => CheckKycStatus(sl()));
+  sl.registerFactory(
+    () => KycBloc(submitKyc: sl(), checkKycStatus: sl()),
+  );
+
+  // Home
   sl.registerLazySingleton<HomeRepository>(
-    () => HomeRepositoryImpl(localDataSource: sl()),
+    () => HomeRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => GetWalletSummary(sl()));
   sl.registerLazySingleton(() => GetRecentTransactions(sl()));
@@ -101,25 +107,17 @@ Future<void> init() async {
   );
 
   // Transactions
-  sl.registerLazySingleton<TransactionLocalDataSource>(
-    () => TransactionLocalDataSourceImpl(mockDataSource: sl()),
-  );
   sl.registerLazySingleton<TransactionRepository>(
-    () => TransactionRepositoryImpl(localDataSource: sl()),
+    () => TransactionRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => GetContacts(sl()));
   sl.registerLazySingleton(() => GetTransactionDetail(sl()));
-  sl.registerFactory(
-    () => SendBloc(getContacts: sl())..add(const LoadContacts()),
-  );
+  sl.registerFactory(() => SendBloc(getContacts: sl()));
   sl.registerFactory(() => TransactionDetailBloc(getTransactionDetail: sl()));
 
   // History
-  sl.registerLazySingleton<HistoryLocalDataSource>(
-    () => HistoryLocalDataSourceImpl(mockDataSource: sl()),
-  );
   sl.registerLazySingleton<HistoryRepository>(
-    () => HistoryRepositoryImpl(localDataSource: sl()),
+    () => HistoryRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => GetTransactionHistory(sl()));
   sl.registerFactory(
@@ -127,11 +125,11 @@ Future<void> init() async {
   );
 
   // Profile
-  sl.registerLazySingleton<ProfileLocalDataSource>(
-    () => ProfileLocalDataSourceImpl(mockDataSource: sl()),
+  sl.registerLazySingleton<ProfileRemoteDataSource>(
+    () => ProfileRemoteDataSourceImpl(apiClient: sl(), tokenStorage: sl()),
   );
   sl.registerLazySingleton<ProfileRepository>(
-    () => ProfileRepositoryImpl(localDataSource: sl()),
+    () => ProfileRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => GetProfile(sl()));
   sl.registerLazySingleton(() => Logout(sl()));
@@ -139,9 +137,9 @@ Future<void> init() async {
     () => ProfileBloc(getProfile: sl(), logout: sl())..add(const LoadProfile()),
   );
 
-  // Settings
+  // Settings (still local — no backend endpoints yet)
   sl.registerLazySingleton<SettingsLocalDataSource>(
-    () => SettingsLocalDataSourceImpl(mockDataSource: sl()),
+    () => SettingsLocalDataSourceImpl(),
   );
   sl.registerLazySingleton<SettingsRepository>(
     () => SettingsRepositoryImpl(localDataSource: sl()),

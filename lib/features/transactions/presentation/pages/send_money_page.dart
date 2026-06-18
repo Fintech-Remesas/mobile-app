@@ -3,8 +3,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/send_bloc.dart';
 
-class SendMoneyPage extends StatelessWidget {
+class SendMoneyPage extends StatefulWidget {
   const SendMoneyPage({super.key});
+
+  @override
+  State<SendMoneyPage> createState() => _SendMoneyPageState();
+}
+
+class _SendMoneyPageState extends State<SendMoneyPage> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +30,15 @@ class SendMoneyPage extends StatelessWidget {
           children: [
             const Text('Select Recipient'),
             const SizedBox(height: 16),
-            const TextField(decoration: InputDecoration(hintText: 'Search by name or phone')),
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: 'Search by name or phone',
+              ),
+              onChanged: (value) {
+                context.read<SendBloc>().add(SearchContacts(value));
+              },
+            ),
             const SizedBox(height: 32),
             Expanded(
               child: BlocBuilder<SendBloc, SendState>(
@@ -29,6 +50,11 @@ class SendMoneyPage extends StatelessWidget {
                     return Center(child: Text(state.message));
                   }
                   if (state is SendLoaded) {
+                    if (state.contacts.isEmpty) {
+                      return const Center(
+                        child: Text('Type at least 2 characters to search users'),
+                      );
+                    }
                     return ListView.builder(
                       itemCount: state.contacts.length,
                       itemBuilder: (context, index) {
@@ -39,8 +65,8 @@ class SendMoneyPage extends StatelessWidget {
                           subtitle: Text(contact.phone),
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Selected. Implement Send flow.'),
+                              SnackBar(
+                                content: Text('Selected ${contact.name}. Quote flow coming soon.'),
                               ),
                             );
                           },
@@ -48,7 +74,9 @@ class SendMoneyPage extends StatelessWidget {
                       },
                     );
                   }
-                  return const SizedBox.shrink();
+                  return const Center(
+                    child: Text('Type at least 2 characters to search users'),
+                  );
                 },
               ),
             ),

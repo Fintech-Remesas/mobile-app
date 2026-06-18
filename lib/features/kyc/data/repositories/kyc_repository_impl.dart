@@ -1,19 +1,15 @@
 import '../../domain/entities/kyc_status.dart';
 import '../../domain/repositories/kyc_repository.dart';
-import '../datasources/kyc_local_datasource.dart';
+import '../datasources/kyc_remote_datasource.dart';
 
 class KycRepositoryImpl implements KycRepository {
-  final KycLocalDataSourceImpl localDataSource;
+  final KycRemoteDataSource remoteDataSource;
 
-  KycRepositoryImpl({required this.localDataSource});
-
-  @override
-  Future<void> submitKyc() => localDataSource.submitKyc();
+  KycRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<KycStatus> checkKycStatus() => localDataSource.checkKycStatus();
+  Future<void> submitKyc() => remoteDataSource.submitKyc();
 
-  void simulateApproval() => localDataSource.simulateApproval();
-
-  void simulateRejection() => localDataSource.simulateRejection();
+  @override
+  Future<KycStatus> checkKycStatus() => remoteDataSource.checkKycStatus();
 }
