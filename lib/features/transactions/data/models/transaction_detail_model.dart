@@ -11,6 +11,7 @@ class TransactionDetailModel extends TransactionDetail {
     required super.blockNumber,
     required super.confirmationStatus,
     required super.blockTimestamp,
+    super.polygonscanUrl,
   });
 
   factory TransactionDetailModel.fromJson(Map<String, dynamic> json) {

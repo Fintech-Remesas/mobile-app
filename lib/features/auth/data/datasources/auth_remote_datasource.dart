@@ -53,6 +53,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return fetchCurrentUser();
   }
 
+  Future<void> _persistUserContext(UserMeModel user) async {
+    await tokenStorage.saveUserId(user.id);
+    if (user.keycloakUserId != null && user.keycloakUserId!.isNotEmpty) {
+      await tokenStorage.saveKeycloakUserId(user.keycloakUserId!);
+    }
+    await tokenStorage.saveCanOperate(user.canOperate);
+  }
+
   @override
   Future<UserMeModel> register({
     required String email,
@@ -78,8 +86,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw ApiException(parsed.message ?? 'Registration failed');
     }
 
-    await tokenStorage.saveUserId(parsed.data!.id);
-    await tokenStorage.saveCanOperate(parsed.data!.canOperate);
+    await _persistUserContext(parsed.data!);
     return parsed.data!;
   }
 
@@ -119,8 +126,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
 
     final user = await _persistSession(parsed.data!);
-    await tokenStorage.saveUserId(user.id);
-    await tokenStorage.saveCanOperate(user.canOperate);
+    await _persistUserContext(user);
     return user;
   }
 
@@ -137,8 +143,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw ApiException(parsed.message ?? 'Failed to load user profile');
     }
 
-    await tokenStorage.saveUserId(parsed.data!.id);
-    await tokenStorage.saveCanOperate(parsed.data!.canOperate);
+    await _persistUserContext(parsed.data!);
     return parsed.data!;
   }
 }

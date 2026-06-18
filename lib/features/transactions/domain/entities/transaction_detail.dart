@@ -10,6 +10,7 @@ class TransactionDetail extends Equatable {
   final int blockNumber;
   final String confirmationStatus;
   final DateTime blockTimestamp;
+  final String? polygonscanUrl;
 
   const TransactionDetail({
     required this.id,
@@ -21,6 +22,7 @@ class TransactionDetail extends Equatable {
     required this.blockNumber,
     required this.confirmationStatus,
     required this.blockTimestamp,
+    this.polygonscanUrl,
   });
 
   @override
@@ -34,5 +36,6 @@ class TransactionDetail extends Equatable {
         blockNumber,
         confirmationStatus,
         blockTimestamp,
+        polygonscanUrl,
       ];
 }

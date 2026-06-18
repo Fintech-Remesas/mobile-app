@@ -10,6 +10,7 @@ class ErrorStateView extends StatelessWidget {
   final String? endpoint;
   final String? hint;
   final VoidCallback? onRetry;
+  final String heading;
 
   const ErrorStateView({
     super.key,
@@ -19,6 +20,7 @@ class ErrorStateView extends StatelessWidget {
     this.endpoint,
     this.hint,
     this.onRetry,
+    this.heading = 'No se pudo cargar el dashboard',
   });
 
   static String? hintForApiException(ApiException error) =>
@@ -80,7 +82,7 @@ class ErrorStateView extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'No se pudo cargar el dashboard',
+              heading,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,

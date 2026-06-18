@@ -17,4 +17,15 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<TransactionDetail> getTransactionDetail(String id) {
     return remoteDataSource.fetchTransactionDetail(id);
   }
+
+  @override
+  Future<String> sendRemittance({
+    required Contact recipient,
+    required double amount,
+  }) {
+    return remoteDataSource.sendRemittance(
+      beneficiaryName: recipient.name,
+      amount: amount,
+    );
+  }
 }

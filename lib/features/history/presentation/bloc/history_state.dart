@@ -26,9 +26,21 @@ class HistoryLoaded extends HistoryState {
 
 class HistoryError extends HistoryState {
   final String message;
+  final int? statusCode;
+  final String? title;
+  final String? endpoint;
+  final String? hint;
+  final Object? originalError;
 
-  const HistoryError(this.message);
+  const HistoryError({
+    required this.message,
+    this.statusCode,
+    this.title,
+    this.endpoint,
+    this.hint,
+    this.originalError,
+  });
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, statusCode, title, endpoint, hint];
 }

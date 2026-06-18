@@ -24,11 +24,41 @@ class SendLoaded extends SendState {
   List<Object?> get props => [contacts];
 }
 
-class SendError extends SendState {
-  final String message;
+class SendRecipientSelected extends SendState {
+  final Contact contact;
 
-  const SendError(this.message);
+  const SendRecipientSelected(this.contact);
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [contact];
+}
+
+class SendSubmitting extends SendState {
+  final Contact contact;
+  final double amount;
+
+  const SendSubmitting(this.contact, this.amount);
+
+  @override
+  List<Object?> get props => [contact, amount];
+}
+
+class SendSuccess extends SendState {
+  final String remittanceId;
+  final Contact contact;
+
+  const SendSuccess(this.remittanceId, this.contact);
+
+  @override
+  List<Object?> get props => [remittanceId, contact];
+}
+
+class SendError extends SendState {
+  final String message;
+  final Contact? contact;
+
+  const SendError(this.message, {this.contact});
+
+  @override
+  List<Object?> get props => [message, contact];
 }

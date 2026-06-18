@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../core/widgets/empty_state_view.dart';
+import '../../../../core/widgets/error_state_view.dart';
 import '../bloc/history_bloc.dart';
 
 class HistoryPage extends StatelessWidget {
@@ -18,9 +20,26 @@ class HistoryPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is HistoryError) {
-            return Center(child: Text(state.message));
+            return ErrorStateView(
+              heading: 'No se pudo cargar el historial',
+              message: state.message,
+              statusCode: state.statusCode,
+              title: state.title,
+              endpoint: state.endpoint,
+              hint: state.hint,
+              onRetry: () => context.read<HistoryBloc>().add(const LoadHistory()),
+            );
           }
           if (state is HistoryLoaded) {
+            if (state.items.isEmpty) {
+              return EmptyStateView(
+                icon: LucideIcons.history,
+                title: 'Historial vacío',
+                subtitle: 'Aún no tienes transacciones registradas.',
+                actionLabel: 'Enviar dinero',
+                onAction: () => context.push('/send'),
+              );
+            }
             return ListView.builder(
               itemCount: state.items.length,
               itemBuilder: (context, index) {

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/token_storage.dart';
@@ -40,6 +42,32 @@ class RemittanceResponseModel {
 
   DateTime? get createdDateTime =>
       createdAt != null ? DateTime.tryParse(createdAt!) : null;
+}
+
+class QuoteResponseModel {
+  final String id;
+  final double sourceAmount;
+  final double destAmount;
+  final String sourceCurrency;
+  final String destCurrency;
+
+  const QuoteResponseModel({
+    required this.id,
+    required this.sourceAmount,
+    required this.destAmount,
+    required this.sourceCurrency,
+    required this.destCurrency,
+  });
+
+  factory QuoteResponseModel.fromJson(Map<String, dynamic> json) {
+    return QuoteResponseModel(
+      id: json['id'] as String,
+      sourceAmount: (json['sourceAmount'] as num).toDouble(),
+      destAmount: (json['destAmount'] as num).toDouble(),
+      sourceCurrency: json['sourceCurrency'] as String? ?? 'USD',
+      destCurrency: json['destCurrency'] as String? ?? 'PEN',
+    );
+  }
 }
 
 class PageResponseModel<T> {
@@ -107,18 +135,34 @@ abstract class RemittanceRemoteDataSource {
   Future<List<HistoryItemModel>> fetchHistory();
   Future<TransactionDetailModel> fetchTransactionDetail(String id);
   Future<List<ContactModel>> searchContacts(String query);
+  Future<String> sendRemittance({
+    required String beneficiaryName,
+    required double amount,
+  });
 }
 
 class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
   final ApiClient apiClient;
   final TokenStorage tokenStorage;
+  final _random = Random();
 
   RemittanceRemoteDataSourceImpl({
     required this.apiClient,
     required this.tokenStorage,
   });
 
+  String _newIdempotencyKey(String prefix) {
+    final suffix = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+    final rand = _random.nextInt(0xFFFFFF).toRadixString(16).padLeft(6, '0');
+    return '$prefix-$suffix-$rand';
+  }
+
   Future<String> _requireUserId() async {
+    final keycloakUserId = await tokenStorage.getKeycloakUserId();
+    if (keycloakUserId != null && keycloakUserId.isNotEmpty) {
+      return keycloakUserId;
+    }
+
     final userId = await tokenStorage.getUserId();
     if (userId == null || userId.isEmpty) {
       throw const ApiException('User not authenticated');
@@ -155,6 +199,28 @@ class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
     );
   }
 
+  Future<QuoteResponseModel?> _fetchQuote(String quoteId) async {
+    try {
+      final response = await apiClient.get<Map<String, dynamic>>(
+        '/api/v1/quotes/$quoteId',
+      );
+      final body = response.data;
+      if (body == null) return null;
+      return QuoteResponseModel.fromJson(body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<double> _resolveOutgoingAmount(RemittanceResponseModel item) async {
+    final quoteId = item.quoteId;
+    if (quoteId == null || quoteId.isEmpty) return 0;
+
+    final quote = await _fetchQuote(quoteId);
+    if (quote == null) return 0;
+    return -quote.sourceAmount;
+  }
+
   String _formatDate(DateTime? date) {
     if (date == null) return '';
     final local = date.toLocal();
@@ -162,24 +228,83 @@ class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
         '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
-  TransactionPreviewModel _toPreview(RemittanceResponseModel item) {
+  Future<TransactionPreviewModel> _toPreview(RemittanceResponseModel item) async {
+    final amount = await _resolveOutgoingAmount(item);
     return TransactionPreviewModel(
       id: item.id,
       title: item.beneficiaryName,
       subtitle: _formatDate(item.createdDateTime),
-      amount: 0,
+      amount: amount,
       isOutgoing: true,
     );
   }
 
-  HistoryItemModel _toHistory(RemittanceResponseModel item) {
+  Future<HistoryItemModel> _toHistory(RemittanceResponseModel item) async {
+    final amount = await _resolveOutgoingAmount(item);
     return HistoryItemModel(
       id: item.id,
       title: item.beneficiaryName,
       subtitle: _formatDate(item.createdDateTime),
-      amount: 0,
+      amount: amount,
       isOutgoing: true,
     );
+  }
+
+  Future<QuoteResponseModel> _createQuote({required double sourceAmount}) async {
+    final response = await apiClient.post<Map<String, dynamic>>(
+      '/api/v1/quotes',
+      data: {
+        'sourceCurrency': 'USD',
+        'destCurrency': 'PEN',
+        'sourceAmount': sourceAmount,
+      },
+      headers: {'X-Idempotency-Key': _newIdempotencyKey('quote')},
+    );
+
+    final body = response.data;
+    if (body == null) {
+      throw const ApiException('Empty quote response');
+    }
+    return QuoteResponseModel.fromJson(body);
+  }
+
+  Future<RemittanceResponseModel> _createRemittance({
+    required String quoteId,
+    required Map<String, dynamic> destBankAccount,
+  }) async {
+    final response = await apiClient.post<Map<String, dynamic>>(
+      '/api/v1/remittances',
+      data: {
+        'quoteId': quoteId,
+        'destBankAccount': destBankAccount,
+      },
+      headers: {'X-Idempotency-Key': _newIdempotencyKey('remittance')},
+    );
+
+    final body = response.data;
+    if (body == null) {
+      throw const ApiException('Empty remittance response');
+    }
+    return RemittanceResponseModel.fromJson(body);
+  }
+
+  @override
+  Future<String> sendRemittance({
+    required String beneficiaryName,
+    required double amount,
+  }) async {
+    final quote = await _createQuote(sourceAmount: amount);
+    final remittance = await _createRemittance(
+      quoteId: quote.id,
+      destBankAccount: {
+        'bankName': 'BCP',
+        'accountNumber': '194-12345678-0-12',
+        'accountType': 'SAVINGS',
+        'beneficiaryName': beneficiaryName,
+        'country': 'PE',
+      },
+    );
+    return remittance.id;
   }
 
   @override
@@ -194,13 +319,13 @@ class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
   @override
   Future<List<TransactionPreviewModel>> fetchRecentTransactions() async {
     final page = await _fetchUserRemittances(page: 0, size: 5);
-    return page.content.map(_toPreview).toList();
+    return Future.wait(page.content.map(_toPreview));
   }
 
   @override
   Future<List<HistoryItemModel>> fetchHistory() async {
     final page = await _fetchUserRemittances(page: 0, size: 20);
-    return page.content.map(_toHistory).toList();
+    return Future.wait(page.content.map(_toHistory));
   }
 
   Future<OrderTimelineModel?> _fetchTimeline(String id) async {
@@ -240,12 +365,14 @@ class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
     }
 
     final remittance = RemittanceResponseModel.fromJson(body);
+    final amount = await _resolveOutgoingAmount(remittance);
     final timeline = await _fetchTimeline(id);
 
     String? txHash = timeline?.txHash;
     int blockNumber = timeline?.blockNumber ?? 0;
     String confirmationStatus = 'pending';
     DateTime blockTimestamp = remittance.createdDateTime ?? DateTime.now();
+    String? polygonscanUrl = timeline?.explorerUrl;
 
     if (txHash != null && txHash.isNotEmpty) {
       final track = await _fetchTxTrack(txHash);
@@ -253,11 +380,14 @@ class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
         blockNumber = track.blockNumber ?? blockNumber;
         confirmationStatus =
             track.status == 'confirmed' ? 'confirmed' : 'pending';
-        blockTimestamp =
-            track.timestamp != null ? DateTime.parse(track.timestamp!) : blockTimestamp;
+        blockTimestamp = track.timestamp != null
+            ? DateTime.parse(track.timestamp!)
+            : blockTimestamp;
+        polygonscanUrl ??= track.explorerUrl;
       }
     } else {
-      txHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      txHash =
+          '0x0000000000000000000000000000000000000000000000000000000000000000';
       confirmationStatus = remittance.status.contains('CONFIRM') ||
               remittance.status.contains('COMPLETED')
           ? 'confirmed'
@@ -266,7 +396,7 @@ class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
 
     return TransactionDetailModel(
       id: remittance.id,
-      amount: 0,
+      amount: amount,
       status: remittance.status,
       recipient: remittance.beneficiaryName,
       transactionHash: txHash,
@@ -274,6 +404,7 @@ class RemittanceRemoteDataSourceImpl implements RemittanceRemoteDataSource {
       blockNumber: blockNumber,
       confirmationStatus: confirmationStatus,
       blockTimestamp: blockTimestamp,
+      polygonscanUrl: polygonscanUrl,
     );
   }
 

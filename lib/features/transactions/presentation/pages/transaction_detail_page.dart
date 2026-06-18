@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/widgets/detail_info_row.dart';
 import '../../../../core/widgets/polygon_node_card.dart';
 import '../../../../theme/app_theme.dart';
 import '../bloc/transaction_detail_bloc.dart';
@@ -20,6 +23,21 @@ class TransactionDetailPage extends StatelessWidget {
     return status == 'confirmed'
         ? PolygonConfirmationStatus.confirmed
         : PolygonConfirmationStatus.pending;
+  }
+
+  static String _truncateId(String value) {
+    if (value.length <= 20) return value;
+    return '${value.substring(0, 8)}...${value.substring(value.length - 6)}';
+  }
+
+  void _copyId(BuildContext context, String value) {
+    Clipboard.setData(ClipboardData(text: value));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('ID copiado al portapapeles'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -42,33 +60,72 @@ class TransactionDetailPage extends StatelessWidget {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Icon(Icons.check_circle, size: 64, color: AppTheme.accentGreen),
+                  const Icon(
+                    Icons.check_circle,
+                    size: 64,
+                    color: AppTheme.accentGreen,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     '$amountPrefix\$$amountValue',
+                    textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
                           fontSize: 32,
                         ),
                   ),
                   const SizedBox(height: 32),
-                  ListTile(
-                    title: const Text('Status'),
-                    trailing: Text(
+                  DetailInfoRow(
+                    centered: true,
+                    label: 'Status',
+                    child: Text(
                       detail.status,
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: AppTheme.accentGreen,
                         fontWeight: FontWeight.w600,
+                        fontSize: 16,
                       ),
                     ),
                   ),
-                  ListTile(
-                    title: const Text('To'),
-                    trailing: Text(detail.recipient),
+                  const SizedBox(height: 20),
+                  DetailInfoRow(
+                    centered: true,
+                    label: 'To',
+                    child: Text(
+                      detail.recipient,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
                   ),
-                  ListTile(
-                    title: const Text('Transaction ID'),
-                    trailing: Text('TRX-${detail.id}'),
+                  const SizedBox(height: 20),
+                  DetailInfoRow(
+                    centered: true,
+                    label: 'Transaction ID',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _truncateId(detail.id),
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 14,
+                            color: AppTheme.textDark,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          color: AppTheme.primaryBlue,
+                          tooltip: 'Copiar ID',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _copyId(context, detail.id),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
                   PolygonNodeCard(
@@ -77,6 +134,7 @@ class TransactionDetailPage extends StatelessWidget {
                     blockNumber: detail.blockNumber,
                     status: _mapStatus(detail.confirmationStatus),
                     blockTimestamp: detail.blockTimestamp,
+                    polygonscanUrl: detail.polygonscanUrl,
                   ),
                 ],
               ),

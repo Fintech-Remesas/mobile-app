@@ -1,5 +1,6 @@
 class UserMeModel {
   final String id;
+  final String? keycloakUserId;
   final String email;
   final String username;
   final String? phone;
@@ -11,6 +12,7 @@ class UserMeModel {
 
   const UserMeModel({
     required this.id,
+    this.keycloakUserId,
     required this.email,
     required this.username,
     this.phone,
@@ -29,6 +31,7 @@ class UserMeModel {
   factory UserMeModel.fromJson(Map<String, dynamic> json) {
     return UserMeModel(
       id: json['id'] as String,
+      keycloakUserId: json['keycloakUserId'] as String?,
       email: json['email'] as String,
       username: json['username'] as String,
       phone: json['phone'] as String?,

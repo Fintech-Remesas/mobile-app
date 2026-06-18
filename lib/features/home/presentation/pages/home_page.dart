@@ -5,7 +5,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/widgets/error_state_view.dart';
 import '../bloc/home_bloc.dart';
-import '../widgets/balance_card.dart';
 import '../widgets/quick_actions_row.dart';
 import '../widgets/recent_transactions_list.dart';
 
@@ -55,8 +54,6 @@ class HomePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    BalanceCard(wallet: state.wallet),
-                    const SizedBox(height: 24),
                     const QuickActionsRow(),
                     const SizedBox(height: 32),
                     RecentTransactionsList(transactions: state.transactions),

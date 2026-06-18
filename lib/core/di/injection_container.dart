@@ -44,6 +44,7 @@ import '../../features/transactions/data/repositories/transaction_repository_imp
 import '../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../features/transactions/domain/usecases/get_contacts.dart';
 import '../../features/transactions/domain/usecases/get_transaction_detail.dart';
+import '../../features/transactions/domain/usecases/send_remittance.dart';
 import '../../features/transactions/presentation/bloc/send_bloc.dart';
 import '../../features/transactions/presentation/bloc/transaction_detail_bloc.dart';
 
@@ -112,7 +113,10 @@ Future<void> init() async {
   );
   sl.registerLazySingleton(() => GetContacts(sl()));
   sl.registerLazySingleton(() => GetTransactionDetail(sl()));
-  sl.registerFactory(() => SendBloc(getContacts: sl()));
+  sl.registerLazySingleton(() => SendRemittance(sl()));
+  sl.registerFactory(
+    () => SendBloc(getContacts: sl(), sendRemittance: sl()),
+  );
   sl.registerFactory(() => TransactionDetailBloc(getTransactionDetail: sl()));
 
   // History

@@ -4,6 +4,7 @@ class TokenStorage {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _userIdKey = 'user_id';
+  static const _keycloakUserIdKey = 'keycloak_user_id';
   static const _canOperateKey = 'can_operate';
 
   final FlutterSecureStorage _storage;
@@ -32,6 +33,11 @@ class TokenStorage {
       _storage.write(key: _userIdKey, value: userId);
 
   Future<String?> getUserId() => _storage.read(key: _userIdKey);
+
+  Future<void> saveKeycloakUserId(String keycloakUserId) =>
+      _storage.write(key: _keycloakUserIdKey, value: keycloakUserId);
+
+  Future<String?> getKeycloakUserId() => _storage.read(key: _keycloakUserIdKey);
 
   Future<void> saveCanOperate(bool value) =>
       _storage.write(key: _canOperateKey, value: value.toString());
