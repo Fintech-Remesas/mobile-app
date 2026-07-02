@@ -15,3 +15,7 @@ class LoadTransactionDetail extends TransactionDetailEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class RefreshTransactionDetail extends TransactionDetailEvent {
+  const RefreshTransactionDetail();
+}

@@ -33,24 +33,54 @@ class SendRecipientSelected extends SendState {
   List<Object?> get props => [contact];
 }
 
-class SendSubmitting extends SendState {
+class SendQuoting extends SendState {
   final Contact contact;
   final double amount;
+  final RemittanceDestination destination;
 
-  const SendSubmitting(this.contact, this.amount);
+  const SendQuoting(this.contact, this.amount, this.destination);
 
   @override
-  List<Object?> get props => [contact, amount];
+  List<Object?> get props => [contact, amount, destination];
+}
+
+class SendQuoteReady extends SendState {
+  final Contact contact;
+  final Quote quote;
+  final RemittanceDestination destination;
+  final String? errorMessage;
+
+  const SendQuoteReady(
+    this.contact,
+    this.quote,
+    this.destination, {
+    this.errorMessage,
+  });
+
+  @override
+  List<Object?> get props => [contact, quote, destination, errorMessage];
+}
+
+class SendSubmitting extends SendState {
+  final Contact contact;
+  final Quote quote;
+  final RemittanceDestination destination;
+
+  const SendSubmitting(this.contact, this.quote, this.destination);
+
+  @override
+  List<Object?> get props => [contact, quote, destination];
 }
 
 class SendSuccess extends SendState {
   final String remittanceId;
   final Contact contact;
+  final Remittance remittance;
 
-  const SendSuccess(this.remittanceId, this.contact);
+  const SendSuccess(this.remittanceId, this.contact, this.remittance);
 
   @override
-  List<Object?> get props => [remittanceId, contact];
+  List<Object?> get props => [remittanceId, contact, remittance];
 }
 
 class SendError extends SendState {

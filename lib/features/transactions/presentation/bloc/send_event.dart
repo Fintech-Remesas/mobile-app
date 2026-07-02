@@ -29,11 +29,32 @@ class ClearRecipient extends SendEvent {
   const ClearRecipient();
 }
 
-class SubmitSend extends SendEvent {
+class RequestQuote extends SendEvent {
+  final Contact contact;
   final double amount;
+  final RemittanceDestination destination;
 
-  const SubmitSend(this.amount);
+  const RequestQuote({
+    required this.contact,
+    required this.amount,
+    required this.destination,
+  });
 
   @override
-  List<Object?> get props => [amount];
+  List<Object?> get props => [contact, amount, destination];
+}
+
+class ConfirmSend extends SendEvent {
+  final Contact contact;
+  final Quote quote;
+  final RemittanceDestination destination;
+
+  const ConfirmSend({
+    required this.contact,
+    required this.quote,
+    required this.destination,
+  });
+
+  @override
+  List<Object?> get props => [contact, quote, destination];
 }

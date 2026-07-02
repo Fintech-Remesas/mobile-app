@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/auth/auth_refresh_notifier.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/usecases/get_profile.dart';
@@ -32,6 +34,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   Future<void> _onLogout(LogoutRequested event, Emitter<ProfileState> emit) async {
     try {
       await logout(const NoParams());
+      sl<AuthRefreshNotifier>().notifySessionExpired();
       emit(const ProfileLoggedOut());
     } catch (e) {
       emit(ProfileError(e.toString()));

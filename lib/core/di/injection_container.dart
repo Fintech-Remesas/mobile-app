@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
+import '../auth/auth_refresh_notifier.dart';
 import '../data/remittance_remote_datasource.dart';
 import '../network/api_client.dart';
+import '../network/remittance_status_socket.dart';
 import '../storage/token_storage.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -11,6 +13,13 @@ import '../../features/auth/domain/usecases/login.dart';
 import '../../features/auth/domain/usecases/register_user.dart';
 import '../../features/auth/domain/usecases/verify_otp.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/bank_accounts/data/datasources/bank_account_remote_datasource.dart';
+import '../../features/bank_accounts/data/repositories/bank_account_repository_impl.dart';
+import '../../features/bank_accounts/domain/repositories/bank_account_repository.dart';
+import '../../features/bank_accounts/domain/usecases/add_bank_account.dart';
+import '../../features/bank_accounts/domain/usecases/delete_bank_account.dart';
+import '../../features/bank_accounts/domain/usecases/get_bank_accounts.dart';
+import '../../features/bank_accounts/presentation/bloc/bank_account_bloc.dart';
 import '../../features/history/data/repositories/history_repository_impl.dart';
 import '../../features/history/domain/repositories/history_repository.dart';
 import '../../features/history/domain/usecases/get_transaction_history.dart';
@@ -42,24 +51,54 @@ import '../../features/settings/domain/usecases/toggle_biometric.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../features/transactions/domain/repositories/transaction_repository.dart';
+import '../../features/transactions/domain/usecases/confirm_deposit.dart';
+import '../../features/transactions/domain/usecases/create_quote.dart';
 import '../../features/transactions/domain/usecases/get_contacts.dart';
+import '../../features/transactions/domain/usecases/get_remittance.dart';
 import '../../features/transactions/domain/usecases/get_transaction_detail.dart';
 import '../../features/transactions/domain/usecases/send_remittance.dart';
+import '../../features/transactions/presentation/bloc/deposit_bloc.dart';
 import '../../features/transactions/presentation/bloc/send_bloc.dart';
 import '../../features/transactions/presentation/bloc/transaction_detail_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  sl.registerLazySingleton(() => AuthRefreshNotifier());
   sl.registerLazySingleton(() => TokenStorage());
   sl.registerLazySingleton(() => Dio());
   sl.registerLazySingleton(
-    () => ApiClient(dio: sl(), tokenStorage: sl()),
+    () => ApiClient(
+      dio: sl(),
+      tokenStorage: sl(),
+      notifier: sl(),
+    ),
+  );
+  sl.registerLazySingleton(
+    () => RemittanceStatusSocketService(tokenStorage: sl()),
   );
 
   // Shared remote data
   sl.registerLazySingleton<RemittanceRemoteDataSource>(
     () => RemittanceRemoteDataSourceImpl(apiClient: sl(), tokenStorage: sl()),
+  );
+
+  // Bank accounts
+  sl.registerLazySingleton<BankAccountRemoteDataSource>(
+    () => BankAccountRemoteDataSourceImpl(apiClient: sl()),
+  );
+  sl.registerLazySingleton<BankAccountRepository>(
+    () => BankAccountRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => AddBankAccount(sl()));
+  sl.registerLazySingleton(() => GetBankAccounts(sl()));
+  sl.registerLazySingleton(() => DeleteBankAccount(sl()));
+  sl.registerFactory(
+    () => BankAccountBloc(
+      getBankAccounts: sl(),
+      addBankAccount: sl(),
+      deleteBankAccount: sl(),
+    )..add(const LoadBankAccounts()),
   );
 
   // Auth
@@ -113,11 +152,30 @@ Future<void> init() async {
   );
   sl.registerLazySingleton(() => GetContacts(sl()));
   sl.registerLazySingleton(() => GetTransactionDetail(sl()));
+  sl.registerLazySingleton(() => CreateQuote(sl()));
   sl.registerLazySingleton(() => SendRemittance(sl()));
+  sl.registerLazySingleton(() => GetRemittance(sl()));
+  sl.registerLazySingleton(() => ConfirmDeposit(sl()));
   sl.registerFactory(
-    () => SendBloc(getContacts: sl(), sendRemittance: sl()),
+    () => SendBloc(
+      getContacts: sl(),
+      createQuote: sl(),
+      sendRemittance: sl(),
+    ),
   );
-  sl.registerFactory(() => TransactionDetailBloc(getTransactionDetail: sl()));
+  sl.registerFactory(
+    () => TransactionDetailBloc(
+      getTransactionDetail: sl(),
+      remittanceDataSource: sl(),
+      statusSocket: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => DepositBloc(
+      getRemittance: sl(),
+      confirmDeposit: sl(),
+    ),
+  );
 
   // History
   sl.registerLazySingleton<HistoryRepository>(

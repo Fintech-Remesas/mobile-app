@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../bloc/auth_bloc.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final bool sessionExpired;
+
+  const LoginPage({super.key, this.sessionExpired = false});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -14,6 +16,21 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sessionExpired) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sesión expirada. Inicia sesión de nuevo.'),
+          ),
+        );
+      });
+    }
+  }
 
   @override
   void dispose() {

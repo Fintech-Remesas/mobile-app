@@ -10,3 +10,7 @@ abstract class HistoryEvent extends Equatable {
 class LoadHistory extends HistoryEvent {
   const LoadHistory();
 }
+
+class LoadMoreHistory extends HistoryEvent {
+  const LoadMoreHistory();
+}

@@ -35,6 +35,48 @@ class ApiException implements Exception {
   @override
   String toString() => displayMessage;
 
+  static String _friendlyMessage({
+    required String? title,
+    required String? detail,
+    required String? message,
+    required String? error,
+    required int? statusCode,
+  }) {
+    final raw = detail ?? message ?? error;
+    if (raw != null && raw.isNotEmpty) return raw;
+
+    if (title != null) {
+      switch (title) {
+        case 'Duplicate Idempotency Key':
+          return 'Esta operación ya fue procesada. Revisa tu historial.';
+        case 'Quote Expired':
+          return 'La cotización expiró o ya fue usada. Solicita una nueva.';
+        case 'Insufficient Funds':
+          return 'Fondos insuficientes para completar la operación.';
+        case 'Invalid State Transition':
+          return 'La remesa no está en un estado válido para esta acción.';
+        case 'Quote Not Found':
+          return 'La cotización no fue encontrada.';
+        case 'Remittance Not Found':
+          return 'La remesa no fue encontrada.';
+        case 'Validation Failed':
+          return 'Datos inválidos. Revisa los campos e intenta de nuevo.';
+      }
+    }
+
+    if (statusCode == 401) {
+      return 'No autorizado. Inicia sesión nuevamente.';
+    }
+    if (statusCode == 409) {
+      return 'Conflicto: la operación ya fue registrada.';
+    }
+    if (statusCode == 422) {
+      return 'No se pudo procesar la solicitud en el estado actual.';
+    }
+
+    return 'Error inesperado del servidor.';
+  }
+
   static ApiException fromDio(DioException error) {
     final response = error.response;
     final statusCode = response?.statusCode;
@@ -42,32 +84,40 @@ class ApiException implements Exception {
     final path = error.requestOptions.uri.path;
 
     if (data is Map<String, dynamic>) {
+      final success = data['success'] as bool?;
+      if (success == false) {
+        final iamMessage = data['message'] as String?;
+        if (iamMessage != null && iamMessage.isNotEmpty) {
+          return ApiException(
+            iamMessage,
+            statusCode: statusCode,
+            endpoint: path,
+          );
+        }
+      }
+
       final detail = data['detail'] as String?;
-      final message = data['message'] as String? ??
-          detail ??
-          data['error'] as String?;
+      final message = data['message'] as String?;
+      final errorMsg = data['error'] as String?;
       final title = data['title'] as String?;
       final instance = data['instance'] as String?;
       final type = data['type'] as String?;
 
-      if (message != null && message.isNotEmpty) {
-        return ApiException(
-          message,
-          statusCode: statusCode ?? (data['status'] as num?)?.toInt(),
-          title: title,
-          endpoint: instance ?? path,
-          type: type,
-        );
-      }
+      final friendly = _friendlyMessage(
+        title: title,
+        detail: detail,
+        message: message,
+        error: errorMsg,
+        statusCode: statusCode ?? (data['status'] as num?)?.toInt(),
+      );
 
-      if (statusCode == 401) {
-        return ApiException(
-          'No autorizado (HTTP 401). Verifica tus credenciales.',
-          statusCode: 401,
-          title: title ?? 'Unauthorized',
-          endpoint: path,
-        );
-      }
+      return ApiException(
+        friendly,
+        statusCode: statusCode ?? (data['status'] as num?)?.toInt(),
+        title: title,
+        endpoint: instance ?? path,
+        type: type,
+      );
     }
 
     if (data is String && data.isNotEmpty) {

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/utils/remittance_status_mapper.dart';
 import '../../../../core/widgets/detail_info_row.dart';
 import '../../../../core/widgets/polygon_node_card.dart';
+import '../../../../core/widgets/remittance_timeline_steps.dart';
 import '../../../../theme/app_theme.dart';
 import '../bloc/transaction_detail_bloc.dart';
 
@@ -20,9 +23,10 @@ class TransactionDetailPage extends StatelessWidget {
   }
 
   PolygonConfirmationStatus _mapStatus(String status) {
-    return status == 'confirmed'
-        ? PolygonConfirmationStatus.confirmed
-        : PolygonConfirmationStatus.pending;
+    if (status == 'confirmed') {
+      return PolygonConfirmationStatus.confirmed;
+    }
+    return PolygonConfirmationStatus.pending;
   }
 
   static String _truncateId(String value) {
@@ -43,7 +47,17 @@ class TransactionDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Transaction Details')),
+      appBar: AppBar(
+        title: const Text('Detalle de remesa'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context
+                .read<TransactionDetailBloc>()
+                .add(const RefreshTransactionDetail()),
+          ),
+        ],
+      ),
       body: BlocBuilder<TransactionDetailBloc, TransactionDetailState>(
         builder: (context, state) {
           if (state is TransactionDetailLoading) {
@@ -56,16 +70,26 @@ class TransactionDetailPage extends StatelessWidget {
             final detail = state.detail;
             final amountPrefix = detail.amount >= 0 ? '+' : '-';
             final amountValue = detail.amount.abs().toStringAsFixed(2);
+            final needsDeposit = RemittanceStatusMapper.needsDeposit(detail.status);
+            final isFailed = detail.status.toUpperCase().contains('FAILED');
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.check_circle,
+                  Icon(
+                    isFailed
+                        ? Icons.error_outline
+                        : detail.confirmationStatus == 'confirmed'
+                            ? Icons.check_circle
+                            : Icons.schedule,
                     size: 64,
-                    color: AppTheme.accentGreen,
+                    color: isFailed
+                        ? Colors.red
+                        : detail.confirmationStatus == 'confirmed'
+                            ? AppTheme.accentGreen
+                            : AppTheme.primaryBlue,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -78,21 +102,39 @@ class TransactionDetailPage extends StatelessWidget {
                   const SizedBox(height: 32),
                   DetailInfoRow(
                     centered: true,
-                    label: 'Status',
+                    label: 'Estado',
                     child: Text(
-                      detail.status,
+                      detail.statusLabel,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppTheme.accentGreen,
+                      style: TextStyle(
+                        color: isFailed ? Colors.red : AppTheme.accentGreen,
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                       ),
                     ),
                   ),
+                  if (detail.errorMessage != null &&
+                      detail.errorMessage!.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        detail.errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   DetailInfoRow(
                     centered: true,
-                    label: 'To',
+                    label: 'Para',
                     child: Text(
                       detail.recipient,
                       textAlign: TextAlign.center,
@@ -101,10 +143,26 @@ class TransactionDetailPage extends StatelessWidget {
                           ),
                     ),
                   ),
+                  if (detail.depositCode != null &&
+                      detail.depositCode!.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    DetailInfoRow(
+                      centered: true,
+                      label: 'Código depósito',
+                      child: Text(
+                        detail.depositCode!,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   DetailInfoRow(
                     centered: true,
-                    label: 'Transaction ID',
+                    label: 'ID remesa',
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -127,15 +185,59 @@ class TransactionDetailPage extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (needsDeposit) ...[
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            context.push('/transaction/$id/deposit'),
+                        icon: const Icon(Icons.payments_outlined),
+                        label: const Text('Ir a confirmar depósito'),
+                      ),
+                    ),
+                  ],
+                  if (detail.timelineSteps.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    RemittanceTimelineSteps(steps: detail.timelineSteps),
+                  ],
                   const SizedBox(height: 24),
-                  PolygonNodeCard(
-                    transactionHash: detail.transactionHash,
-                    network: _mapNetwork(detail.network),
-                    blockNumber: detail.blockNumber,
-                    status: _mapStatus(detail.confirmationStatus),
-                    blockTimestamp: detail.blockTimestamp,
-                    polygonscanUrl: detail.polygonscanUrl,
-                  ),
+                  if (detail.hasTransactionHash)
+                    PolygonNodeCard(
+                      transactionHash: detail.transactionHash!,
+                      network: _mapNetwork(detail.network),
+                      blockNumber: detail.blockNumber,
+                      status: _mapStatus(detail.confirmationStatus),
+                      blockTimestamp: detail.blockTimestamp,
+                      polygonscanUrl: detail.polygonscanUrl,
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.borderColor),
+                      ),
+                      child: Column(
+                        children: [
+                          if (detail.isPolling)
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 12),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          Text(
+                            'Procesando transacción blockchain...',
+                            textAlign: TextAlign.center,
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             );

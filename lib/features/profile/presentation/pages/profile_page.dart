@@ -47,6 +47,12 @@ class ProfilePage extends StatelessWidget {
                   Center(child: Text(state.profile.email)),
                   const SizedBox(height: 32),
                   ListTile(
+                    leading: const Icon(LucideIcons.landmark),
+                    title: const Text('Cuentas bancarias'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/bank-accounts'),
+                  ),
+                  ListTile(
                     leading: const Icon(LucideIcons.shield),
                     title: const Text('Security'),
                     trailing: const Icon(Icons.chevron_right),

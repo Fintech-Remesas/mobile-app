@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/auth/auth_refresh_notifier.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/login.dart';
 import '../../domain/usecases/register_user.dart';
@@ -33,6 +35,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
     try {
       await login(LoginParams(email: event.email, password: event.password));
+      sl<AuthRefreshNotifier>().notifyAuthChanged();
       emit(AuthLoginSuccess(needsKyc: authRepository.needsKyc));
     } catch (e) {
       emit(AuthFailure(e.toString()));

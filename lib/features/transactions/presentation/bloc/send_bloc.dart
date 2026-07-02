@@ -3,6 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../domain/entities/contact.dart';
+import '../../domain/entities/remittance_destination.dart';
+import '../../domain/entities/quote.dart';
+import '../../domain/entities/remittance.dart';
+import '../../domain/usecases/create_quote.dart';
 import '../../domain/usecases/get_contacts.dart';
 import '../../domain/usecases/send_remittance.dart';
 
@@ -11,16 +15,19 @@ part 'send_state.dart';
 
 class SendBloc extends Bloc<SendEvent, SendState> {
   final GetContacts getContacts;
+  final CreateQuote createQuote;
   final SendRemittance sendRemittance;
 
   SendBloc({
     required this.getContacts,
+    required this.createQuote,
     required this.sendRemittance,
   }) : super(const SendInitial()) {
     on<SearchContacts>(_onSearchContacts);
     on<SelectRecipient>(_onSelectRecipient);
     on<ClearRecipient>(_onClearRecipient);
-    on<SubmitSend>(_onSubmitSend);
+    on<RequestQuote>(_onRequestQuote);
+    on<ConfirmSend>(_onConfirmSend);
   }
 
   Future<void> _onSearchContacts(
@@ -49,36 +56,38 @@ class SendBloc extends Bloc<SendEvent, SendState> {
     emit(const SendLoaded([]));
   }
 
-  Contact? _contactFromState(SendState state) {
-    if (state is SendRecipientSelected) return state.contact;
-    if (state is SendSubmitting) return state.contact;
-    if (state is SendError && state.contact != null) return state.contact;
-    return null;
-  }
-
-  Future<void> _onSubmitSend(
-    SubmitSend event,
+  Future<void> _onRequestQuote(
+    RequestQuote event,
     Emitter<SendState> emit,
   ) async {
-    final contact = _contactFromState(state);
-    if (contact == null) return;
-
-    if (event.amount <= 0) {
-      emit(SendError('Ingresa un monto mayor a 0', contact: contact));
-      return;
-    }
-
-    emit(SendSubmitting(contact, event.amount));
+    emit(SendQuoting(event.contact, event.amount, event.destination));
     try {
-      final remittanceId = await sendRemittance(
+      final quote = await createQuote(CreateQuoteParams(amount: event.amount));
+      emit(SendQuoteReady(event.contact, quote, event.destination));
+    } catch (e) {
+      emit(SendError(_messageFrom(e), contact: event.contact));
+    }
+  }
+
+  Future<void> _onConfirmSend(
+    ConfirmSend event,
+    Emitter<SendState> emit,
+  ) async {
+    emit(SendSubmitting(event.contact, event.quote, event.destination));
+    try {
+      final remittance = await sendRemittance(
         SendRemittanceParams(
-          recipient: contact,
-          amount: event.amount,
+          recipient: event.contact,
+          quote: event.quote,
+          destination: event.destination,
         ),
       );
-      emit(SendSuccess(remittanceId, contact));
+      emit(SendSuccess(remittance.id, event.contact, remittance));
     } catch (e) {
-      emit(SendError(_messageFrom(e), contact: contact));
+      emit(
+        SendQuoteReady(event.contact, event.quote, event.destination,
+            errorMessage: _messageFrom(e)),
+      );
     }
   }
 

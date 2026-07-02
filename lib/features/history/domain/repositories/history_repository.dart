@@ -1,5 +1,5 @@
-import '../entities/history_item.dart';
+import '../entities/history_page.dart';
 
 abstract class HistoryRepository {
-  Future<List<HistoryItem>> getTransactionHistory();
+  Future<HistoryPage> getTransactionHistoryPage({int page = 0, int size = 20});
 }

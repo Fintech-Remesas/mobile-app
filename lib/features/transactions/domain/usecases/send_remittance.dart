@@ -1,13 +1,18 @@
 import '../entities/contact.dart';
+import '../entities/quote.dart';
+import '../entities/remittance.dart';
+import '../entities/remittance_destination.dart';
 import '../repositories/transaction_repository.dart';
 
 class SendRemittanceParams {
   final Contact recipient;
-  final double amount;
+  final Quote quote;
+  final RemittanceDestination destination;
 
   const SendRemittanceParams({
     required this.recipient,
-    required this.amount,
+    required this.quote,
+    required this.destination,
   });
 }
 
@@ -16,10 +21,10 @@ class SendRemittance {
 
   SendRemittance(this.repository);
 
-  Future<String> call(SendRemittanceParams params) {
-    return repository.sendRemittance(
-      recipient: params.recipient,
-      amount: params.amount,
+  Future<Remittance> call(SendRemittanceParams params) {
+    return repository.createRemittance(
+      quoteId: params.quote.id,
+      destination: params.destination,
     );
   }
 }

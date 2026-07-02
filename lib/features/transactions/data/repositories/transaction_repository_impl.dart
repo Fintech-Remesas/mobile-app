@@ -1,5 +1,8 @@
 import '../../../../core/data/remittance_remote_datasource.dart';
 import '../../domain/entities/contact.dart';
+import '../../domain/entities/quote.dart';
+import '../../domain/entities/remittance.dart';
+import '../../domain/entities/remittance_destination.dart';
 import '../../domain/entities/transaction_detail.dart';
 import '../../domain/repositories/transaction_repository.dart';
 
@@ -19,13 +22,34 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<String> sendRemittance({
-    required Contact recipient,
+  Future<Quote> createQuote({
     required double amount,
+    String destinationCountry = 'PE',
   }) {
-    return remoteDataSource.sendRemittance(
-      beneficiaryName: recipient.name,
-      amount: amount,
+    return remoteDataSource.createQuote(
+      sourceAmount: amount,
+      destinationCountry: destinationCountry,
     );
+  }
+
+  @override
+  Future<Remittance> createRemittance({
+    required String quoteId,
+    required RemittanceDestination destination,
+  }) {
+    return remoteDataSource.createRemittance(
+      quoteId: quoteId,
+      destination: destination,
+    );
+  }
+
+  @override
+  Future<Remittance> getRemittance(String id) {
+    return remoteDataSource.fetchRemittance(id);
+  }
+
+  @override
+  Future<void> confirmDeposit(String remittanceId) {
+    return remoteDataSource.confirmDeposit(remittanceId);
   }
 }

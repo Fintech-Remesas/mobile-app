@@ -17,11 +17,53 @@ class HistoryLoading extends HistoryState {
 
 class HistoryLoaded extends HistoryState {
   final List<HistoryItem> items;
+  final int total;
+  final int currentPage;
+  final RemittanceSummary? summary;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final String? loadMoreError;
 
-  const HistoryLoaded(this.items);
+  const HistoryLoaded({
+    required this.items,
+    required this.total,
+    required this.currentPage,
+    this.summary,
+    this.hasMore = false,
+    this.isLoadingMore = false,
+    this.loadMoreError,
+  });
+
+  HistoryLoaded copyWith({
+    List<HistoryItem>? items,
+    int? total,
+    int? currentPage,
+    RemittanceSummary? summary,
+    bool? hasMore,
+    bool? isLoadingMore,
+    String? loadMoreError,
+  }) {
+    return HistoryLoaded(
+      items: items ?? this.items,
+      total: total ?? this.total,
+      currentPage: currentPage ?? this.currentPage,
+      summary: summary ?? this.summary,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError,
+    );
+  }
 
   @override
-  List<Object?> get props => [items];
+  List<Object?> get props => [
+        items,
+        total,
+        currentPage,
+        summary,
+        hasMore,
+        isLoadingMore,
+        loadMoreError,
+      ];
 }
 
 class HistoryError extends HistoryState {
