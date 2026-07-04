@@ -36,7 +36,7 @@ class AppConstants {
   static String confirmDepositEndpoint(String remittanceId) => 
       '$apiPrefix/remittances/$remittanceId/confirm-deposit';
   static String orderTimelineEndpoint(String remittanceId) => 
-      '$apiPrefix/orders/$remittanceId/timeline';
+      '$apiPrefix/remittances/$remittanceId';
   static String trackTxEndpoint(String txHash) => 
       '$apiPrefix/tx/$txHash/track';
   static String statusTxEndpoint(String txHash) => 

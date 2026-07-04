@@ -241,9 +241,11 @@ class _TransactionViewState extends State<TransactionView> {
           Expanded(
             child: timeline == null 
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  itemCount: timeline.steps.length,
-                  itemBuilder: (context, index) {
+              : timeline.steps.isEmpty
+                ? const Center(child: Text('Aún no hay actualizaciones en la blockchain'))
+                : ListView.builder(
+                    itemCount: timeline.steps.length,
+                    itemBuilder: (context, index) {
                     final step = timeline.steps[index];
                     Color statusColor = Colors.grey;
                     IconData statusIcon = LucideIcons.circle;

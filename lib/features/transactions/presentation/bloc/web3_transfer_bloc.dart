@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../data/models/web3/user_search_model.dart';
 import '../../data/models/web3/quote_model.dart';
@@ -194,7 +195,9 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
       final timeline = await dataSource.getTimeline(event.remittanceId);
       emit(TransferTracking(_remittance!, timeline));
     } catch (e) {
+      debugPrint("Error loading timeline: $e");
       // Don't emit generic error, just retain tracking state without timeline or show snackbar
+      // But we can emit a new state if needed.
     }
   }
 }

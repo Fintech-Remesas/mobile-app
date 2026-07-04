@@ -51,12 +51,12 @@ class TimelineModel {
   });
 
   factory TimelineModel.fromJson(Map<String, dynamic> json) {
-    var stepsJson = json['steps'] as List? ?? [];
+    var stepsJson = json['timeline'] as List? ?? json['steps'] as List? ?? [];
     List<TimelineStepModel> stepsList = stepsJson.map((i) => TimelineStepModel.fromJson(i)).toList();
 
     return TimelineModel(
       remittanceId: json['remittanceId'] ?? '',
-      currentStatus: json['currentStatus'] ?? '',
+      currentStatus: json['status'] ?? '',
       txHash: json['txHash'],
       blockNumber: json['blockNumber'],
       explorerUrl: json['explorerUrl'],
