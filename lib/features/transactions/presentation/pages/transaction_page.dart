@@ -56,6 +56,17 @@ class _TransactionViewState extends State<TransactionView> {
             return _buildConfirmStep(context, state);
           } else if (state is TransferTracking) {
             return _buildTrackingStep(context, state);
+          } else if (state is TransferError) {
+            final bloc = context.read<Web3TransferBloc>();
+            if (bloc.selectedUser == null) {
+              return _buildSearchStep(context, state);
+            } else if (bloc.quote == null) {
+              return _buildAmountStep(context, state);
+            } else if (bloc.remittance == null) {
+              return _buildConfirmStep(context, state);
+            } else {
+              return _buildTrackingStep(context, state);
+            }
           }
           return const Center(child: Text('Unknown State'));
         },

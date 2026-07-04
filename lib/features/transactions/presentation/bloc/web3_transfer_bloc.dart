@@ -119,6 +119,10 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
   QuoteModel? _quote;
   RemittanceModel? _remittance;
 
+  UserSearchModel? get selectedUser => _selectedUser;
+  QuoteModel? get quote => _quote;
+  RemittanceModel? get remittance => _remittance;
+
   Web3TransferBloc({required this.dataSource}) : super(TransferInitial()) {
     on<SearchUsersEvent>(_onSearchUsers);
     on<SelectUserEvent>(_onSelectUser);

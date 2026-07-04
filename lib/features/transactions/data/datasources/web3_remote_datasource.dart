@@ -23,18 +23,19 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
 
   Web3RemoteDataSourceImpl({required this.client});
 
-  Map<String, String> get _authHeaders {
+  Map<String, String> _buildHeaders({bool includeIdempotency = false}) {
     final token = SessionManager.instance.token;
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
+      if (includeIdempotency) 'X-Idempotency-Key': 'mobile-${DateTime.now().millisecondsSinceEpoch}',
     };
   }
 
   @override
   Future<List<UserSearchModel>> searchUsers(String query) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.apiPrefix}/users/search?query=$query');
-    final response = await client.get(url, headers: _authHeaders);
+    final response = await client.get(url, headers: _buildHeaders());
     
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -58,7 +59,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.quotesEndpoint}');
     final response = await client.post(
       url, 
-      headers: _authHeaders,
+      headers: _buildHeaders(includeIdempotency: true),
       body: json.encode({
         "sourceCurrency": "USD",
         "destCurrency": "PEN",
@@ -79,7 +80,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.remittancesEndpoint}');
     final response = await client.post(
       url, 
-      headers: _authHeaders,
+      headers: _buildHeaders(includeIdempotency: true),
       body: json.encode({
         "quoteId": quoteId,
         "destinationUserId": destinationUserId,
@@ -99,7 +100,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
   @override
   Future<void> confirmDeposit(String remittanceId) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.confirmDepositEndpoint(remittanceId)}');
-    final response = await client.post(url, headers: _authHeaders);
+    final response = await client.post(url, headers: _buildHeaders());
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       throw Exception('Failed to confirm deposit');
@@ -109,7 +110,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
   @override
   Future<TimelineModel> getTimeline(String remittanceId) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.orderTimelineEndpoint(remittanceId)}');
-    final response = await client.get(url, headers: _authHeaders);
+    final response = await client.get(url, headers: _buildHeaders());
 
     if (response.statusCode == 200) {
       return TimelineModel.fromJson(json.decode(response.body));
@@ -121,7 +122,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
   @override
   Future<TxTrackModel> trackTx(String txHash) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.trackTxEndpoint(txHash)}');
-    final response = await client.get(url, headers: _authHeaders);
+    final response = await client.get(url, headers: _buildHeaders());
 
     if (response.statusCode == 200) {
       return TxTrackModel.fromJson(json.decode(response.body));
@@ -133,7 +134,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
   @override
   Future<WalletInfoModel> getWalletInfo() async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.walletInfoEndpoint}');
-    final response = await client.get(url, headers: _authHeaders);
+    final response = await client.get(url, headers: _buildHeaders());
 
     if (response.statusCode == 200) {
       return WalletInfoModel.fromJson(json.decode(response.body));
