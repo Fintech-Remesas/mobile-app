@@ -35,6 +35,7 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
+        'X-User-Id': SessionManager.instance.userId ?? '',
         'X-Idempotency-Key': '${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(999999)}',
       },
       body: jsonEncode(body),
@@ -73,6 +74,7 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
+        'X-User-Id': SessionManager.instance.userId ?? '',
         'X-Idempotency-Key': '${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(999999)}',
       },
       body: jsonEncode(body),
