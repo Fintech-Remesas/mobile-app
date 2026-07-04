@@ -36,7 +36,7 @@ class QuickActionsRow extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         ElevatedButton.icon(
-          onPressed: enabled ? () {} : null, // Todo: Add transfer functionality
+          onPressed: enabled ? () => context.push('/transaction') : null,
           icon: const Icon(LucideIcons.arrowRightLeft),
           label: const Text('Transferir'),
           style: ElevatedButton.styleFrom(
