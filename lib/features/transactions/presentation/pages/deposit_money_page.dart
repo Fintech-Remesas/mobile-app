@@ -65,11 +65,24 @@ class _DepositMoneyPageState extends State<DepositMoneyPage> {
       child: BlocListener<DepositBloc, DepositState>(
         listener: (context, state) {
           if (state is DepositSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Deposit successful!')),
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Transacción exitosa'),
+                content: const Text('Tu recarga se ha procesado correctamente.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx); // Close dialog
+                      context.read<HomeBloc>().add(const RefreshHome());
+                      context.pop(); // Close page
+                    },
+                    child: const Text('Aceptar'),
+                  ),
+                ],
+              ),
             );
-            context.read<HomeBloc>().add(RefreshHome());
-            context.pop();
           } else if (state is DepositFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error), backgroundColor: Colors.red),

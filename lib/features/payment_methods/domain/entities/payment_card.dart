@@ -34,7 +34,16 @@ class PaymentCard {
       expiryYear: json['expiryYear'] ?? 0,
       alias: json['alias'] ?? '',
       isPrimary: json['isPrimary'] ?? false,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      createdAt: _parseDate(json['createdAt']),
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date == null) return DateTime.now();
+    if (date is String) return DateTime.tryParse(date) ?? DateTime.now();
+    if (date is List && date.length >= 6) {
+      return DateTime(date[0], date[1], date[2], date[3], date[4], date[5]);
+    }
+    return DateTime.now();
   }
 }

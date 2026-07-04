@@ -65,11 +65,24 @@ class _WithdrawMoneyPageState extends State<WithdrawMoneyPage> {
       child: BlocListener<WithdrawBloc, WithdrawState>(
         listener: (context, state) {
           if (state is WithdrawSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Withdrawal successful!')),
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Transacción exitosa'),
+                content: const Text('Tu retiro se ha procesado correctamente.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx); // Close dialog
+                      context.read<HomeBloc>().add(const RefreshHome());
+                      context.pop(); // Close page
+                    },
+                    child: const Text('Aceptar'),
+                  ),
+                ],
+              ),
             );
-            context.read<HomeBloc>().add(RefreshHome());
-            context.pop();
           } else if (state is WithdrawFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error), backgroundColor: Colors.red),
