@@ -33,14 +33,21 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
 
   @override
   Future<List<UserSearchModel>> searchUsers(String query) async {
-    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.apiPrefix}/users/search?q=$query');
+    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.apiPrefix}/users/search?query=$query');
     final response = await client.get(url, headers: _authHeaders);
     
     if (response.statusCode == 200) {
-      // Assuming response wraps in "data" or is a direct list. Let's assume it's an ApiResponse with data.
       final jsonResponse = json.decode(response.body);
-      final List<dynamic> data = jsonResponse['data'] ?? jsonResponse; // Handle both wrapped and raw
-      return data.map((e) => UserSearchModel.fromJson(e)).toList();
+      final dynamic data = jsonResponse['data'] ?? jsonResponse;
+      List<dynamic> usersList = [];
+      if (data is List) {
+        usersList = data;
+      } else if (data is Map && data['users'] != null) {
+        usersList = data['users'];
+      } else if (data is Map && data['content'] != null) {
+        usersList = data['content'];
+      }
+      return usersList.map((e) => UserSearchModel.fromJson(e)).toList();
     } else {
       throw Exception('Failed to search users');
     }

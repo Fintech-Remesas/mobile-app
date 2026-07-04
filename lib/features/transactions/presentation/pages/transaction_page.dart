@@ -69,7 +69,7 @@ class _TransactionViewState extends State<TransactionView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Paso 1: Buscar Destinatario', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Buscar Destinatario', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           TextField(
             controller: _searchController,
@@ -135,7 +135,7 @@ class _TransactionViewState extends State<TransactionView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Paso 2: Ingresar Monto (USD)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Ingresar Monto (USD)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text('Destinatario: ${user.fullName}', style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
@@ -176,7 +176,7 @@ class _TransactionViewState extends State<TransactionView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Paso 3: Confirmar Cotización', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Confirmar Cotización', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           Card(
             child: Padding(
