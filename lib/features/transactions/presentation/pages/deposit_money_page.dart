@@ -117,6 +117,7 @@ class _DepositMoneyPageState extends State<DepositMoneyPage> {
                       return DropdownButtonFormField<String>(
                         value: _selectedCardId,
                         hint: const Text('Select a card'),
+                        isExpanded: true,
                         decoration: const InputDecoration(border: OutlineInputBorder()),
                         items: state.cards.map((PaymentCard card) {
                           return DropdownMenuItem<String>(

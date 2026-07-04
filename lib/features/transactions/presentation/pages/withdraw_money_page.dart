@@ -117,6 +117,7 @@ class _WithdrawMoneyPageState extends State<WithdrawMoneyPage> {
                       return DropdownButtonFormField<String>(
                         value: _selectedBankAccountId,
                         hint: const Text('Select a bank account'),
+                        isExpanded: true,
                         decoration: const InputDecoration(border: OutlineInputBorder()),
                         items: state.accounts.map((BankAccount account) {
                           return DropdownMenuItem<String>(

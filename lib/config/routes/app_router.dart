@@ -100,17 +100,17 @@ final GoRouter appRouter = GoRouter(
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => BlocProvider.value(
-        value: sl<KycBloc>(),
+      builder: (context, state, child) => MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: sl<KycBloc>()),
+          BlocProvider(create: (_) => sl<HomeBloc>()),
+        ],
         child: MainLayout(child: child),
       ),
       routes: [
         GoRoute(
           path: '/home',
-          builder: (context, state) => BlocProvider(
-            create: (_) => sl<HomeBloc>(),
-            child: const HomePage(),
-          ),
+          builder: (context, state) => const HomePage(),
         ),
         GoRoute(
           path: '/deposit',
