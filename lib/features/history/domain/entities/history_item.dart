@@ -6,6 +6,7 @@ class HistoryItem extends Equatable {
   final String subtitle;
   final double amount;
   final bool isOutgoing;
+  final DateTime date;
 
   const HistoryItem({
     required this.id,
@@ -13,8 +14,9 @@ class HistoryItem extends Equatable {
     required this.subtitle,
     required this.amount,
     required this.isOutgoing,
+    required this.date,
   });
 
   @override
-  List<Object?> get props => [id, title, subtitle, amount, isOutgoing];
+  List<Object?> get props => [id, title, subtitle, amount, isOutgoing, date];
 }

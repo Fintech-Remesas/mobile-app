@@ -8,7 +8,7 @@ import '../../features/auth/domain/usecases/login.dart';
 import '../../features/auth/domain/usecases/register_user.dart';
 import '../../features/auth/domain/usecases/verify_otp.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../features/history/data/datasources/history_local_datasource.dart';
+import '../../features/history/data/datasources/history_remote_datasource.dart';
 import '../../features/history/data/repositories/history_repository_impl.dart';
 import '../../features/history/domain/repositories/history_repository.dart';
 import '../../features/history/domain/usecases/get_transaction_history.dart';
@@ -148,11 +148,11 @@ Future<void> init() async {
   sl.registerFactory(() => WithdrawBloc(withdrawFunds: sl()));
 
   // History
-  sl.registerLazySingleton<HistoryLocalDataSource>(
-    () => HistoryLocalDataSourceImpl(mockDataSource: sl()),
+  sl.registerLazySingleton<HistoryRemoteDataSource>(
+    () => HistoryRemoteDataSourceImpl(client: sl()),
   );
   sl.registerLazySingleton<HistoryRepository>(
-    () => HistoryRepositoryImpl(localDataSource: sl()),
+    () => HistoryRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => GetTransactionHistory(sl()));
   sl.registerFactory(

@@ -7,6 +7,7 @@ class HistoryItemModel extends HistoryItem {
     required super.subtitle,
     required super.amount,
     required super.isOutgoing,
+    required super.date,
   });
 
   factory HistoryItemModel.fromJson(Map<String, dynamic> json) {
@@ -16,6 +17,7 @@ class HistoryItemModel extends HistoryItem {
       subtitle: json['subtitle'] as String,
       amount: (json['amount'] as num).toDouble(),
       isOutgoing: json['isOutgoing'] as bool,
+      date: DateTime.now(), // dummy for mock
     );
   }
 }
