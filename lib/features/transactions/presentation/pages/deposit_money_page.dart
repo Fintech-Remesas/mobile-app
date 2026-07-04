@@ -76,7 +76,7 @@ class _DepositMoneyPageState extends State<DepositMoneyPage> {
                     onPressed: () {
                       Navigator.pop(ctx); // Close dialog
                       context.read<HomeBloc>().add(const RefreshHome());
-                      context.pop(); // Close page
+                      context.go('/home'); // Explicitly go to dashboard
                     },
                     child: const Text('Aceptar'),
                   ),
