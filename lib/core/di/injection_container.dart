@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
+import 'package:http/http.dart' as http;
 
-import '../../features/auth/data/datasources/auth_local_datasource.dart';
+import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/usecases/login.dart';
@@ -15,6 +16,7 @@ import '../../features/history/presentation/bloc/history_bloc.dart';
 import '../../features/home/data/datasources/home_local_datasource.dart';
 import '../../features/home/data/repositories/home_repository_impl.dart';
 import '../../features/home/domain/repositories/home_repository.dart';
+import '../../features/home/domain/usecases/get_ledger_movements.dart';
 import '../../features/home/domain/usecases/get_recent_transactions.dart';
 import '../../features/home/domain/usecases/get_wallet_summary.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
@@ -39,25 +41,44 @@ import '../../features/settings/domain/usecases/get_notifications.dart';
 import '../../features/settings/domain/usecases/toggle_biometric.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/transactions/data/datasources/transaction_local_datasource.dart';
+import '../../features/transactions/data/datasources/transaction_remote_datasource.dart';
 import '../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../features/transactions/domain/usecases/get_contacts.dart';
 import '../../features/transactions/domain/usecases/get_transaction_detail.dart';
+import '../../features/transactions/domain/usecases/deposit_funds.dart';
+import '../../features/transactions/domain/usecases/withdraw_funds.dart';
 import '../../features/transactions/presentation/bloc/send_bloc.dart';
+import '../../features/transactions/presentation/bloc/deposit_bloc.dart';
+import '../../features/transactions/presentation/bloc/withdraw_bloc.dart';
 import '../../features/transactions/presentation/bloc/transaction_detail_bloc.dart';
+import '../../features/payment_methods/data/datasources/payment_methods_remote_datasource.dart';
+import '../../features/payment_methods/data/repositories/payment_methods_repository_impl.dart';
+import '../../features/payment_methods/domain/repositories/payment_methods_repository.dart';
+import '../../features/payment_methods/domain/usecases/add_bank_account.dart';
+import '../../features/payment_methods/domain/usecases/add_card.dart';
+import '../../features/payment_methods/domain/usecases/get_cards.dart';
+import '../../features/payment_methods/domain/usecases/delete_card.dart';
+import '../../features/payment_methods/domain/usecases/get_bank_accounts.dart';
+import '../../features/payment_methods/domain/usecases/delete_bank_account.dart';
+import '../../features/payment_methods/presentation/bloc/add_bank_account_bloc.dart';
+import '../../features/payment_methods/presentation/bloc/add_card_bloc.dart';
+import '../../features/payment_methods/presentation/bloc/cards_list_bloc.dart';
+import '../../features/payment_methods/presentation/bloc/bank_accounts_list_bloc.dart';
 import '../data/mock_data_source.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
   sl.registerLazySingleton(() => MockDataSource());
+  sl.registerLazySingleton(() => http.Client());
 
   // Auth
-  sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(mockDataSource: sl()),
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(client: sl()),
   );
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(localDataSource: sl()),
+    () => AuthRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => Login(sl()));
   sl.registerLazySingleton(() => RegisterUser(sl()));
@@ -76,12 +97,12 @@ Future<void> init() async {
   sl.registerLazySingleton<KycRepository>(() => sl<KycRepositoryImpl>());
   sl.registerLazySingleton(() => SubmitKyc(sl()));
   sl.registerLazySingleton(() => CheckKycStatus(sl()));
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => KycBloc(
       submitKyc: sl(),
       checkKycStatus: sl(),
       repository: sl<KycRepositoryImpl>(),
-    ),
+    )..add(const CheckKycStatusRequested()),
   );
 
   // Home
@@ -93,10 +114,12 @@ Future<void> init() async {
   );
   sl.registerLazySingleton(() => GetWalletSummary(sl()));
   sl.registerLazySingleton(() => GetRecentTransactions(sl()));
+  sl.registerLazySingleton(() => GetLedgerMovements(sl()));
   sl.registerFactory(
     () => HomeBloc(
       getWalletSummary: sl(),
       getRecentTransactions: sl(),
+      getLedgerMovements: sl(),
     )..add(const LoadHome()),
   );
 
@@ -104,15 +127,25 @@ Future<void> init() async {
   sl.registerLazySingleton<TransactionLocalDataSource>(
     () => TransactionLocalDataSourceImpl(mockDataSource: sl()),
   );
+  sl.registerLazySingleton<TransactionRemoteDataSource>(
+    () => TransactionRemoteDataSourceImpl(client: sl()),
+  );
   sl.registerLazySingleton<TransactionRepository>(
-    () => TransactionRepositoryImpl(localDataSource: sl()),
+    () => TransactionRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    ),
   );
   sl.registerLazySingleton(() => GetContacts(sl()));
   sl.registerLazySingleton(() => GetTransactionDetail(sl()));
+  sl.registerLazySingleton(() => DepositFunds(sl()));
+  sl.registerLazySingleton(() => WithdrawFunds(sl()));
   sl.registerFactory(
     () => SendBloc(getContacts: sl())..add(const LoadContacts()),
   );
   sl.registerFactory(() => TransactionDetailBloc(getTransactionDetail: sl()));
+  sl.registerFactory(() => DepositBloc(depositFunds: sl()));
+  sl.registerFactory(() => WithdrawBloc(withdrawFunds: sl()));
 
   // History
   sl.registerLazySingleton<HistoryLocalDataSource>(
@@ -156,4 +189,26 @@ Future<void> init() async {
         getBiometricEnabled: sl(),
         toggleBiometric: sl(),
       ));
+
+  // Payment Methods
+  sl.registerLazySingleton<PaymentMethodsRemoteDataSource>(
+    () => PaymentMethodsRemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerLazySingleton<PaymentMethodsRepository>(
+    () => PaymentMethodsRepositoryImpl(remoteDataSource: sl()),
+  );
+  
+  // Use cases
+  sl.registerLazySingleton(() => AddCard(sl()));
+  sl.registerLazySingleton(() => AddBankAccount(sl()));
+  sl.registerLazySingleton(() => GetCards(sl()));
+  sl.registerLazySingleton(() => DeleteCard(sl()));
+  sl.registerLazySingleton(() => GetBankAccounts(sl()));
+  sl.registerLazySingleton(() => DeleteBankAccount(sl()));
+
+  // Blocs
+  sl.registerFactory(() => AddCardBloc(addCard: sl()));
+  sl.registerFactory(() => AddBankAccountBloc(addBankAccount: sl()));
+  sl.registerFactory(() => CardsListBloc(getCards: sl(), deleteCard: sl()));
+  sl.registerFactory(() => BankAccountsListBloc(getBankAccounts: sl(), deleteBankAccount: sl()));
 }

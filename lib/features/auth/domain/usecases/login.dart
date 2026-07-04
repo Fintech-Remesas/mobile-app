@@ -1,10 +1,10 @@
 import '../../domain/repositories/auth_repository.dart';
 
 class LoginParams {
-  final String email;
+  final String usernameOrEmail;
   final String password;
 
-  const LoginParams({required this.email, required this.password});
+  const LoginParams({required this.usernameOrEmail, required this.password});
 }
 
 class Login {
@@ -13,6 +13,9 @@ class Login {
   Login(this.repository);
 
   Future<void> call(LoginParams params) {
-    return repository.login(email: params.email, password: params.password);
+    return repository.login(
+      usernameOrEmail: params.usernameOrEmail,
+      password: params.password,
+    );
   }
 }

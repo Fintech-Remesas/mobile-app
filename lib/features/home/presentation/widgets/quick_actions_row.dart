@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class QuickActionsRow extends StatelessWidget {
-  const QuickActionsRow({super.key});
+  final bool enabled;
+
+  const QuickActionsRow({super.key, this.enabled = true});
 
   @override
   Widget build(BuildContext context) {
@@ -11,17 +13,17 @@ class QuickActionsRow extends StatelessWidget {
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () => context.push('/send'),
-            icon: const Icon(LucideIcons.send),
-            label: const Text('Send'),
+            onPressed: enabled ? () => context.push('/deposit') : null,
+            icon: const Icon(LucideIcons.arrowUpCircle),
+            label: const Text('Deposit'),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: () => context.push('/receive'),
-            icon: const Icon(LucideIcons.download),
-            label: const Text('Receive'),
+            onPressed: enabled ? () => context.push('/withdraw') : null,
+            icon: const Icon(LucideIcons.arrowDownCircle),
+            label: const Text('Withdraw'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),

@@ -29,10 +29,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      await login(LoginParams(email: event.email, password: event.password));
+      await login(
+        LoginParams(
+          usernameOrEmail: event.usernameOrEmail,
+          password: event.password,
+        ),
+      );
       emit(const AuthLoginSuccess());
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      emit(AuthFailure(e.toString().replaceFirst('Exception: ', '')));
     }
   }
 
@@ -42,14 +47,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      await registerUser(RegisterParams(
+      final userId = await registerUser(RegisterParams(
         email: event.email,
+        username: event.username,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        country: event.country,
+        preferredLanguage: event.preferredLanguage,
         phone: event.phone,
-        password: event.password,
+        initialPassword: event.initialPassword,
       ));
-      emit(const AuthRegisterSuccess());
+
+      // Auto login fue removido a petición del usuario.
+      emit(AuthRegisterSuccess(createdUserId: userId));
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      emit(AuthFailure(e.toString().replaceFirst('Exception: ', '')));
     }
   }
 
@@ -62,7 +74,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await verifyOtp(VerifyOtpParams(code: event.code));
       emit(const AuthVerifyOtpSuccess());
     } catch (e) {
-      emit(AuthFailure(e.toString()));
+      emit(AuthFailure(e.toString().replaceFirst('Exception: ', '')));
     }
   }
 }

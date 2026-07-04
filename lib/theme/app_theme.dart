@@ -86,7 +86,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           elevation: 0,
-          shadowColor: accentGreen.withValues(alpha: 0.4),
+          shadowColor: accentGreen.withOpacity(0.4),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -130,7 +130,7 @@ class AppTheme {
         ),
         hintStyle: GoogleFonts.plusJakartaSans(color: textSecondary),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: bgMain,
         elevation: 1,
         shape: RoundedRectangleBorder(

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Permite el certificado autofirmado del servidor de producción.
+        Cuando tengas un dominio con Let's Encrypt, puedes eliminar
+        el bloque <trust-anchors> y dejar solo el default.
+    -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">3.151.248.130</domain>
+        <trust-anchors>
+            <!-- Certificados del sistema (Let's Encrypt, etc.) -->
+            <certificates src="system"/>
+            <!-- Certificado autofirmado empaquetado en la app -->
+            <certificates src="@raw/sagiro_cert"/>
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Para cualquier otro servidor, solo confiar en certificados del sistema -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

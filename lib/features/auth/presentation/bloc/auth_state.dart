@@ -20,7 +20,12 @@ class AuthLoginSuccess extends AuthState {
 }
 
 class AuthRegisterSuccess extends AuthState {
-  const AuthRegisterSuccess();
+  final String createdUserId;
+
+  const AuthRegisterSuccess({required this.createdUserId});
+
+  @override
+  List<Object?> get props => [createdUserId];
 }
 
 class AuthVerifyOtpSuccess extends AuthState {

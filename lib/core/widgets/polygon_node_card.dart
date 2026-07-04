@@ -244,13 +244,13 @@ class _ConfirmationBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: isConfirmed
-            ? AppTheme.accentGreen.withValues(alpha: 0.18)
-            : Colors.orange.withValues(alpha: 0.15),
+            ? AppTheme.accentGreen.withOpacity(0.18)
+            : Colors.orange.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isConfirmed
-              ? AppTheme.accentGreen.withValues(alpha: 0.4)
-              : Colors.orange.withValues(alpha: 0.4),
+              ? AppTheme.accentGreen.withOpacity(0.4)
+              : Colors.orange.withOpacity(0.4),
         ),
       ),
       child: Text(

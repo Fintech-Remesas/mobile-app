@@ -34,6 +34,7 @@ class KycBloc extends Bloc<KycEvent, KycState> {
     try {
       await submitKyc(const NoParams());
       emit(const KycSubmitted());
+      emit(const KycStatusLoaded(KycStatus.approved));
     } catch (e) {
       emit(KycError(e.toString()));
     }

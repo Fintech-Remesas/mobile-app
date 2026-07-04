@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../bloc/profile_bloc.dart';
+import '../../../kyc/presentation/bloc/kyc_bloc.dart';
+import '../../../kyc/domain/entities/kyc_status.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -27,43 +29,84 @@ class ProfilePage extends StatelessWidget {
               return Center(child: Text(state.message));
             }
             if (state is ProfileLoaded) {
-              return ListView(
-                padding: const EdgeInsets.all(24),
-                children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    child: Icon(LucideIcons.user, size: 40),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      state.profile.name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+              return BlocBuilder<KycBloc, KycState>(
+                builder: (context, kycState) {
+                  final isKycApproved = kycState is KycStatusLoaded &&
+                      kycState.status == KycStatus.approved;
+                  return ListView(
+                    padding: const EdgeInsets.all(24),
+                    children: [
+                      const CircleAvatar(
+                        radius: 40,
+                        child: Icon(LucideIcons.user, size: 40),
                       ),
-                    ),
-                  ),
-                  Center(child: Text(state.profile.email)),
-                  const SizedBox(height: 32),
-                  ListTile(
-                    leading: const Icon(LucideIcons.shield),
-                    title: const Text('Security'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/security'),
-                  ),
-                  ListTile(
-                    leading: const Icon(LucideIcons.activity),
-                    title: const Text('Limits'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/limits'),
-                  ),
-                  ListTile(
-                    leading: const Icon(LucideIcons.logOut, color: Colors.red),
-                    title: const Text('Log Out', style: TextStyle(color: Colors.red)),
-                    onTap: () => context.read<ProfileBloc>().add(const LogoutRequested()),
-                  ),
-                ],
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Text(
+                          state.profile.name,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Center(child: Text(state.profile.email)),
+                      const SizedBox(height: 32),
+                      ListTile(
+                        leading: Icon(
+                          LucideIcons.userCheck,
+                          color: isKycApproved ? Colors.green : Colors.orange,
+                        ),
+                        title: const Text('Verificar Identidad'),
+                        subtitle: Text(
+                          isKycApproved ? 'Completado' : 'Requerido para operar',
+                          style: TextStyle(
+                            color: isKycApproved ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          if (!isKycApproved) {
+                            context.push('/kyc-start');
+                          }
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(LucideIcons.landmark),
+                        title: const Text('Cuentas Bancarias'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          context.push('/bank-accounts');
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(LucideIcons.creditCard),
+                        title: const Text('Tarjetas'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          context.push('/cards');
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(LucideIcons.shield),
+                        title: const Text('Security'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/security'),
+                      ),
+                      ListTile(
+                        leading: const Icon(LucideIcons.activity),
+                        title: const Text('Limits'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/limits'),
+                      ),
+                      ListTile(
+                        leading: const Icon(LucideIcons.logOut, color: Colors.red),
+                        title: const Text('Log Out', style: TextStyle(color: Colors.red)),
+                        onTap: () => context.read<ProfileBloc>().add(const LogoutRequested()),
+                      ),
+                    ],
+                  );
+                },
               );
             }
             return const SizedBox.shrink();

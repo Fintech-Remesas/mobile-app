@@ -18,16 +18,18 @@ class HomeLoading extends HomeState {
 class HomeLoaded extends HomeState {
   final WalletSummary wallet;
   final List<TransactionPreview> transactions;
+  final List<LedgerMovement> ledgerMovements;
   final bool isRefreshing;
 
   const HomeLoaded({
     required this.wallet,
     required this.transactions,
+    required this.ledgerMovements,
     this.isRefreshing = false,
   });
 
   @override
-  List<Object?> get props => [wallet, transactions, isRefreshing];
+  List<Object?> get props => [wallet, transactions, ledgerMovements, isRefreshing];
 }
 
 class HomeError extends HomeState {

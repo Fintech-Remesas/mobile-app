@@ -38,8 +38,8 @@ class RecentTransactionsList extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
                 backgroundColor: tx.isOutgoing
-                    ? Colors.red.withValues(alpha: 0.1)
-                    : Colors.green.withValues(alpha: 0.1),
+                    ? Colors.red.withOpacity(0.1)
+                    : Colors.green.withOpacity(0.1),
                 child: Icon(
                   tx.isOutgoing
                       ? LucideIcons.arrowUpRight

@@ -1,31 +1,51 @@
+import '../../../../core/data/session_manager.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_local_datasource.dart';
+import '../datasources/auth_remote_datasource.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthLocalDataSource localDataSource;
+  final AuthRemoteDataSource remoteDataSource;
 
-  AuthRepositoryImpl({required this.localDataSource});
-
-  @override
-  Future<void> login({required String email, required String password}) {
-    return localDataSource.login(email: email, password: password);
-  }
+  AuthRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<void> register({
-    required String email,
-    required String phone,
+  Future<void> login({
+    required String usernameOrEmail,
     required String password,
-  }) {
-    return localDataSource.register(
-      email: email,
-      phone: phone,
+  }) async {
+    final response = await remoteDataSource.login(
+      usernameOrEmail: usernameOrEmail,
       password: password,
     );
+    SessionManager.instance.setSession(response.accessToken);
   }
 
   @override
-  Future<void> verifyOtp({required String code}) {
-    return localDataSource.verifyOtp(code: code);
+  Future<String> register({
+    required String email,
+    required String username,
+    required String firstName,
+    required String lastName,
+    required String country,
+    required String preferredLanguage,
+    String? phone,
+    String? initialPassword,
+  }) async {
+    final response = await remoteDataSource.register(
+      email: email,
+      username: username,
+      firstName: firstName,
+      lastName: lastName,
+      country: country,
+      preferredLanguage: preferredLanguage,
+      phone: phone,
+      initialPassword: initialPassword,
+    );
+    return response.id;
+  }
+
+  @override
+  Future<void> verifyOtp({required String code}) async {
+    // TODO: implement when OTP endpoint is available in backend
+    await Future.delayed(const Duration(seconds: 1));
   }
 }

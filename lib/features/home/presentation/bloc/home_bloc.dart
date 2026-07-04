@@ -2,8 +2,10 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/usecases/usecase.dart';
+import '../../domain/entities/ledger_movement.dart';
 import '../../domain/entities/transaction_preview.dart';
 import '../../domain/entities/wallet_summary.dart';
+import '../../domain/usecases/get_ledger_movements.dart';
 import '../../domain/usecases/get_recent_transactions.dart';
 import '../../domain/usecases/get_wallet_summary.dart';
 
@@ -13,10 +15,12 @@ part 'home_state.dart';
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetWalletSummary getWalletSummary;
   final GetRecentTransactions getRecentTransactions;
+  final GetLedgerMovements getLedgerMovements;
 
   HomeBloc({
     required this.getWalletSummary,
     required this.getRecentTransactions,
+    required this.getLedgerMovements,
   }) : super(const HomeInitial()) {
     on<LoadHome>(_onLoadHome);
     on<RefreshHome>(_onRefreshHome);
@@ -30,7 +34,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   Future<void> _onRefreshHome(RefreshHome event, Emitter<HomeState> emit) async {
     final current = state;
     if (current is HomeLoaded) {
-      emit(HomeLoaded(wallet: current.wallet, transactions: current.transactions, isRefreshing: true));
+      emit(HomeLoaded(
+        wallet: current.wallet,
+        transactions: current.transactions,
+        ledgerMovements: current.ledgerMovements,
+        isRefreshing: true,
+      ));
     } else {
       emit(const HomeLoading());
     }
@@ -42,10 +51,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final results = await Future.wait([
         getWalletSummary(const NoParams()),
         getRecentTransactions(const NoParams()),
+        getLedgerMovements(const NoParams()),
       ]);
       emit(HomeLoaded(
         wallet: results[0] as WalletSummary,
         transactions: results[1] as List<TransactionPreview>,
+        ledgerMovements: results[2] as List<LedgerMovement>,
       ));
     } catch (e) {
       emit(HomeError(e.toString()));

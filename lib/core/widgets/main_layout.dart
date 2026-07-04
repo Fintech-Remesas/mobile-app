@@ -13,7 +13,7 @@ class MainLayout extends StatelessWidget {
 
     int currentIndex = 0;
     if (location.startsWith('/home')) currentIndex = 0;
-    if (location.startsWith('/send') || location.startsWith('/receive')) {
+    if (location.startsWith('/deposit') || location.startsWith('/withdraw')) {
       currentIndex = 1;
     }
     if (location.startsWith('/history')) currentIndex = 2;
@@ -29,7 +29,7 @@ class MainLayout extends StatelessWidget {
             case 0:
               context.go('/home');
             case 1:
-              context.go('/send');
+              context.go('/deposit');
             case 2:
               context.go('/history');
             case 3:
@@ -38,7 +38,7 @@ class MainLayout extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(LucideIcons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.send), label: 'Send'),
+          BottomNavigationBarItem(icon: Icon(LucideIcons.arrowUpCircle), label: 'Deposit'),
           BottomNavigationBarItem(
             icon: Icon(LucideIcons.history),
             label: 'History',

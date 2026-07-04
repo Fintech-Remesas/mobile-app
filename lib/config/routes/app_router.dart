@@ -24,11 +24,18 @@ import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/settings/presentation/pages/limits_page.dart';
 import '../../features/settings/presentation/pages/notifications_page.dart';
 import '../../features/settings/presentation/pages/security_page.dart';
-import '../../features/transactions/presentation/bloc/send_bloc.dart';
+import '../../features/transactions/presentation/pages/deposit_money_page.dart';
+import '../../features/transactions/presentation/pages/withdraw_money_page.dart';
 import '../../features/transactions/presentation/bloc/transaction_detail_bloc.dart';
-import '../../features/transactions/presentation/pages/receive_money_page.dart';
-import '../../features/transactions/presentation/pages/send_money_page.dart';
 import '../../features/transactions/presentation/pages/transaction_detail_page.dart';
+import '../../features/payment_methods/presentation/bloc/add_bank_account_bloc.dart';
+import '../../features/payment_methods/presentation/bloc/add_card_bloc.dart';
+import '../../features/payment_methods/presentation/bloc/bank_accounts_list_bloc.dart';
+import '../../features/payment_methods/presentation/bloc/cards_list_bloc.dart';
+import '../../features/payment_methods/presentation/pages/add_bank_account_page.dart';
+import '../../features/payment_methods/presentation/pages/add_card_page.dart';
+import '../../features/payment_methods/presentation/pages/bank_accounts_page.dart';
+import '../../features/payment_methods/presentation/pages/cards_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -45,8 +52,13 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/register',
-      builder: (context, state) => BlocProvider(
-        create: (_) => sl<AuthBloc>(),
+      builder: (context, state) => MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => sl<AuthBloc>()),
+          BlocProvider.value(value: sl<KycBloc>()),
+          BlocProvider(create: (_) => sl<AddBankAccountBloc>()),
+          BlocProvider(create: (_) => sl<AddCardBloc>()),
+        ],
         child: const RegisterPage(),
       ),
     ),
@@ -66,15 +78,15 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/kyc-start',
-      builder: (context, state) => BlocProvider(
-        create: (_) => sl<KycBloc>(),
+      builder: (context, state) => BlocProvider.value(
+        value: sl<KycBloc>(),
         child: const KycStartPage(),
       ),
     ),
     GoRoute(
       path: '/kyc-pending',
-      builder: (context, state) => BlocProvider(
-        create: (_) => sl<KycBloc>(),
+      builder: (context, state) => BlocProvider.value(
+        value: sl<KycBloc>(),
         child: const KycPendingPage(),
       ),
     ),
@@ -88,7 +100,10 @@ final GoRouter appRouter = GoRouter(
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => MainLayout(child: child),
+      builder: (context, state, child) => BlocProvider.value(
+        value: sl<KycBloc>(),
+        child: MainLayout(child: child),
+      ),
       routes: [
         GoRoute(
           path: '/home',
@@ -98,15 +113,12 @@ final GoRouter appRouter = GoRouter(
           ),
         ),
         GoRoute(
-          path: '/send',
-          builder: (context, state) => BlocProvider(
-            create: (_) => sl<SendBloc>(),
-            child: const SendMoneyPage(),
-          ),
+          path: '/deposit',
+          builder: (context, state) => const DepositMoneyPage(),
         ),
         GoRoute(
-          path: '/receive',
-          builder: (context, state) => const ReceiveMoneyPage(),
+          path: '/withdraw',
+          builder: (context, state) => const WithdrawMoneyPage(),
         ),
         GoRoute(
           path: '/history',
@@ -153,6 +165,34 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => BlocProvider(
         create: (_) => sl<SettingsBloc>()..add(const LoadSecuritySettings()),
         child: const SecurityPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/cards',
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<CardsListBloc>(),
+        child: const CardsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/bank-accounts',
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<BankAccountsListBloc>(),
+        child: const BankAccountsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/add-card',
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<AddCardBloc>(),
+        child: const AddCardPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/add-bank-account',
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<AddBankAccountBloc>(),
+        child: const AddBankAccountPage(),
       ),
     ),
   ],
