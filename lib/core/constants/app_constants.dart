@@ -29,4 +29,17 @@ class AppConstants {
   // Ledger / Movements endpoints
   static String userMovementsEndpoint(String userId) =>
       '$apiPrefix/movements/user/$userId';
+
+  // Transfer / Web3 Endpoints
+  static const String quotesEndpoint = '$apiPrefix/quotes';
+  static const String remittancesEndpoint = '$apiPrefix/remittances';
+  static String confirmDepositEndpoint(String remittanceId) => 
+      '$apiPrefix/remittances/$remittanceId/confirm-deposit';
+  static String orderTimelineEndpoint(String remittanceId) => 
+      '$apiPrefix/orders/$remittanceId/timeline';
+  static String trackTxEndpoint(String txHash) => 
+      '$apiPrefix/tx/$txHash/track';
+  static String statusTxEndpoint(String txHash) => 
+      '$apiPrefix/tx/$txHash/status';
+  static const String walletInfoEndpoint = '$apiPrefix/tx/wallet/info';
 }

@@ -42,6 +42,7 @@ import '../../features/settings/domain/usecases/toggle_biometric.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/transactions/data/datasources/transaction_local_datasource.dart';
 import '../../features/transactions/data/datasources/transaction_remote_datasource.dart';
+import '../../features/transactions/data/datasources/web3_remote_datasource.dart';
 import '../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../features/transactions/domain/usecases/get_contacts.dart';
@@ -52,6 +53,7 @@ import '../../features/transactions/presentation/bloc/send_bloc.dart';
 import '../../features/transactions/presentation/bloc/deposit_bloc.dart';
 import '../../features/transactions/presentation/bloc/withdraw_bloc.dart';
 import '../../features/transactions/presentation/bloc/transaction_detail_bloc.dart';
+import '../../features/transactions/presentation/bloc/web3_transfer_bloc.dart';
 import '../../features/payment_methods/data/datasources/payment_methods_remote_datasource.dart';
 import '../../features/payment_methods/data/repositories/payment_methods_repository_impl.dart';
 import '../../features/payment_methods/domain/repositories/payment_methods_repository.dart';
@@ -146,6 +148,12 @@ Future<void> init() async {
   sl.registerFactory(() => TransactionDetailBloc(getTransactionDetail: sl()));
   sl.registerFactory(() => DepositBloc(depositFunds: sl()));
   sl.registerFactory(() => WithdrawBloc(withdrawFunds: sl()));
+
+  // Web3 Transfer Flow
+  sl.registerLazySingleton<Web3RemoteDataSource>(
+    () => Web3RemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerFactory(() => Web3TransferBloc(dataSource: sl()));
 
   // History
   sl.registerLazySingleton<HistoryRemoteDataSource>(
