@@ -25,7 +25,10 @@ import '../../features/settings/presentation/pages/limits_page.dart';
 import '../../features/settings/presentation/pages/notifications_page.dart';
 import '../../features/settings/presentation/pages/security_page.dart';
 import '../../features/transactions/presentation/pages/deposit_money_page.dart';
+import '../../features/transactions/presentation/pages/transaction_page.dart';
 import '../../features/transactions/presentation/pages/withdraw_money_page.dart';
+
+// ... other imports ...
 import '../../features/transactions/presentation/bloc/transaction_detail_bloc.dart';
 import '../../features/transactions/presentation/pages/transaction_detail_page.dart';
 import '../../features/payment_methods/presentation/bloc/add_bank_account_bloc.dart';
@@ -111,6 +114,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/home',
           builder: (context, state) => const HomePage(),
+        ),
+        GoRoute(
+          path: '/transaction',
+          builder: (context, state) => const TransactionPage(),
         ),
         GoRoute(
           path: '/deposit',
