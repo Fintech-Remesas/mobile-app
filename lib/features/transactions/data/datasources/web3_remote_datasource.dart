@@ -11,7 +11,7 @@ import '../models/web3/tx_track_model.dart';
 abstract class Web3RemoteDataSource {
   Future<List<UserSearchModel>> searchUsers(String query);
   Future<UserSearchModel> fetchPublicProfile(String userId);
-  Future<QuoteModel> createQuote(double amountUSD, {required String destinationCountry, String senderCountry = 'PE'});
+  Future<QuoteModel> createQuote(double amountUSD, {required String destinationCountry});
   Future<RemittanceModel> createRemittance(
     String quoteId,
     String destinationUserId,
@@ -20,7 +20,7 @@ abstract class Web3RemoteDataSource {
     String? senderName,
     String? recipientName,
     String note, {
-    required String senderCountry,
+    String? senderCountry,
     required String recipientCountry,
   });
   Future<void> confirmDeposit(String remittanceId);
@@ -95,7 +95,6 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
   Future<QuoteModel> createQuote(
     double amountUSD, {
     required String destinationCountry,
-    String senderCountry = 'PE',
   }) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.quotesEndpoint}');
     final response = await client.post(
@@ -124,17 +123,19 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     String? senderName,
     String? recipientName,
     String note, {
-    required String senderCountry,
+    String? senderCountry,
     required String recipientCountry,
   }) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.remittancesEndpoint}');
     final body = <String, dynamic>{
       'quoteId': quoteId,
       'destinationUserId': destinationUserId,
-      'senderCountry': senderCountry,
       'recipientCountry': recipientCountry,
       'note': note,
     };
+    if (senderCountry != null && senderCountry.isNotEmpty) {
+      body['senderCountry'] = senderCountry;
+    }
     if (destinationBankAccountId != null) {
       body['destinationBankAccountId'] = destinationBankAccountId;
     }

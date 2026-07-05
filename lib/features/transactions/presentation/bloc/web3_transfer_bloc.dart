@@ -120,7 +120,6 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
   QuoteModel? _quote;
   RemittanceModel? _remittance;
   Timer? _pollingTimer;
-  static const String _senderCountry = 'PE';
 
   UserSearchModel? get selectedUser => _selectedUser;
   QuoteModel? get quote => _quote;
@@ -170,7 +169,6 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
       _quote = await dataSource.createQuote(
         event.amountUSD,
         destinationCountry: _selectedUser!.country ?? 'US',
-        senderCountry: _senderCountry,
       );
       emit(TransferQuoteLoaded(_selectedUser!, _quote!));
     } catch (e) {
@@ -191,7 +189,6 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
         event.senderName,
         _selectedUser!.fullName,
         'Apoyo desde App Móvil',
-        senderCountry: _senderCountry,
         recipientCountry: _selectedUser!.country ?? 'US',
       );
 
