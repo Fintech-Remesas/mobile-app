@@ -103,7 +103,6 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
         'sourceCurrency': 'USD',
         'destCurrency': destinationCountry == 'PE' ? 'PEN' : 'USD',
         'destinationCountry': destinationCountry,
-        'senderCountry': senderCountry,
         'amountUSD': amountUSD,
       }),
     );
