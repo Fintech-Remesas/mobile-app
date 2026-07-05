@@ -37,7 +37,10 @@ class RequestQuoteEvent extends Web3TransferEvent {
 }
 
 class ConfirmTransferEvent extends Web3TransferEvent {
-  const ConfirmTransferEvent();
+  final String senderName;
+  const ConfirmTransferEvent(this.senderName);
+  @override
+  List<Object?> get props => [senderName];
 }
 
 class LoadTimelineEvent extends Web3TransferEvent {
@@ -185,6 +188,8 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
         _selectedUser!.id,
         null,
         null,
+        event.senderName,
+        _selectedUser!.fullName,
         'Apoyo desde App Móvil',
         senderCountry: _senderCountry,
         recipientCountry: _selectedUser!.country ?? 'US',

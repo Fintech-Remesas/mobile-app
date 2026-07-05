@@ -17,6 +17,8 @@ abstract class Web3RemoteDataSource {
     String destinationUserId,
     String? destinationBankAccountId,
     String? destinationWalletAddress,
+    String? senderName,
+    String? recipientName,
     String note, {
     required String senderCountry,
     required String recipientCountry,
@@ -119,6 +121,8 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     String destinationUserId,
     String? destinationBankAccountId,
     String? destinationWalletAddress,
+    String? senderName,
+    String? recipientName,
     String note, {
     required String senderCountry,
     required String recipientCountry,
@@ -136,6 +140,12 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     }
     if (destinationWalletAddress != null && destinationWalletAddress.isNotEmpty) {
       body['destinationWalletAddress'] = destinationWalletAddress;
+    }
+    if (senderName != null) {
+      body['senderName'] = senderName;
+    }
+    if (recipientName != null) {
+      body['recipientName'] = recipientName;
     }
 
     final response = await client.post(

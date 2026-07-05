@@ -10,6 +10,8 @@ class RemittanceModel {
   final String status;
   final String? txHash;
   final String? userId;
+  final String? senderName;
+  final String? recipientName;
 
   RemittanceModel({
     required this.remittanceId,
@@ -20,9 +22,11 @@ class RemittanceModel {
     required this.amountSourceCurrency,
     required this.message,
     this.expiresAt,
-    required this.status,
+    this.status = '',
     this.txHash,
     this.userId,
+    this.senderName,
+    this.recipientName,
   });
 
   factory RemittanceModel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,8 @@ class RemittanceModel {
       status: json['status']?.toString() ?? '',
       txHash: json['txHash']?.toString(),
       userId: json['userId']?.toString(),
+      senderName: json['senderName']?.toString(),
+      recipientName: json['recipientName']?.toString(),
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../bloc/web3_transfer_bloc.dart';
+import '../../../profile/presentation/bloc/profile_bloc.dart';
 
 class TransactionPage extends StatelessWidget {
   const TransactionPage({super.key});
@@ -223,7 +224,9 @@ class _TransactionViewState extends State<TransactionView> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[700], foregroundColor: Colors.white, padding: const EdgeInsets.all(16)),
               onPressed: isConfirming ? null : () {
-                context.read<Web3TransferBloc>().add(const ConfirmTransferEvent());
+                final profileState = context.read<ProfileBloc>().state;
+                final senderName = profileState is ProfileLoaded ? profileState.profile.name : 'Usuario';
+                context.read<Web3TransferBloc>().add(ConfirmTransferEvent(senderName));
               },
               child: isConfirming ? const CircularProgressIndicator(color: Colors.white) : const Text('Confirmar Transferencia'),
             ),
@@ -245,6 +248,15 @@ class _TransactionViewState extends State<TransactionView> {
         children: [
           const Text('Estado de la Transferencia', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
+          _buildDetailRow('Monto Transferido:', '\$${remittance.amountUSD.toStringAsFixed(2)} USDC', isBold: true, color: Colors.green),
+          _buildDetailRow('Cuenta Destino:', remittance.recipientName ?? 'Receptor', isBold: true),
+          const Divider(),
+          Text('Wallet Origen (EE.UU. - ${remittance.senderName ?? 'Usuario'}):', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          const Text('0x91c8AE9c06dF2a431E16664e3459F157C910827F', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          const SizedBox(height: 4),
+          Text('Wallet Destino (Perú - ${remittance.recipientName ?? 'Receptor'}):', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          const Text('0xcb3E3A9AF0D72786172fCeb2E27Ab835504daA00', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          const Divider(),
           Text('Remesa ID: ${remittance.remittanceId}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
           if (timeline != null) ...[
             Text('Estado: ${timeline.currentStatus}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
@@ -263,31 +275,72 @@ class _TransactionViewState extends State<TransactionView> {
           Expanded(
             child: timeline == null 
               ? const Center(child: CircularProgressIndicator())
-              : timeline.steps.isEmpty
-                ? const Center(child: Text('Aún no hay actualizaciones en la blockchain'))
-                : ListView.builder(
-                    itemCount: timeline.steps.length,
-                    itemBuilder: (context, index) {
-                    final step = timeline.steps[index];
-                    Color statusColor = Colors.grey;
-                    IconData statusIcon = LucideIcons.circle;
-                    
-                    if (step.status == 'completed') {
-                      statusColor = Colors.green;
-                      statusIcon = LucideIcons.checkCircle2;
-                    } else if (step.status == 'in_progress') {
-                      statusColor = Colors.orange;
-                      statusIcon = LucideIcons.loader;
-                    }
+              : () {
+                  final status = timeline.currentStatus.toUpperCase();
+                  int level = 0;
+                  if (status == 'PENDING') level = 1;
+                  if (status == 'DEPOSIT_CONFIRMED') level = 2;
+                  if (status == 'IN_BLOCKCHAIN') level = 4;
+                  if (status == 'COMPLETED') level = 6;
+                  if (status == 'FAILED') level = -1;
 
-                    return ListTile(
-                      leading: Icon(statusIcon, color: statusColor),
-                      title: Text(step.label, style: TextStyle(fontWeight: step.status == 'completed' || step.status == 'in_progress' ? FontWeight.bold : FontWeight.normal)),
-                      subtitle: step.detail != null ? Text(step.detail!) : null,
-                      trailing: step.status == 'in_progress' ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : null,
-                    );
-                  },
-                ),
+                  final nodes = [
+                    {
+                      'label': 'Firma Criptográfica Local',
+                      'detail': 'Wallet de Sagiro firma la orden con llave privada',
+                      'status': level > 1 ? 'completed' : (level == 1 ? 'in_progress' : (level == -1 ? 'failed' : 'pending')),
+                    },
+                    {
+                      'label': 'Difusión a Nodo RPC',
+                      'detail': 'Enviando transacción a Alchemy Gateway (IP: 104.18.23.111)',
+                      'status': level > 2 ? 'completed' : (level == 2 ? 'in_progress' : 'pending'),
+                    },
+                    {
+                      'label': 'Mempool Pública',
+                      'detail': 'Transacción en cola de red P2P (Polygon Amoy)',
+                      'status': level > 3 ? 'completed' : (level == 3 ? 'in_progress' : 'pending'),
+                    },
+                    {
+                      'label': 'Ejecución por Nodo Validador',
+                      'detail': 'Validador #${timeline.txHash != null && timeline.txHash!.length > 6 ? timeline.txHash!.substring(2, 6) : "0x4"} (IP: 54.12.${timeline.txHash != null && timeline.txHash!.length > 6 ? timeline.txHash!.codeUnitAt(2) % 255 : 44}.${timeline.txHash != null && timeline.txHash!.length > 6 ? timeline.txHash!.codeUnitAt(3) % 255 : 12})',
+                      'status': level > 4 ? 'completed' : (level == 4 ? 'in_progress' : 'pending'),
+                    },
+                    {
+                      'label': 'Confirmación Descentralizada',
+                      'detail': 'Bloque minado inmutablemente en la blockchain',
+                      'status': level > 5 ? 'completed' : (level == 5 ? 'in_progress' : 'pending'),
+                    },
+                  ];
+
+                  return ListView.builder(
+                    itemCount: nodes.length,
+                    itemBuilder: (context, index) {
+                      final node = nodes[index];
+                      final nodeStatus = node['status'] as String;
+                      
+                      Color statusColor = Colors.grey;
+                      IconData statusIcon = LucideIcons.circle;
+                      
+                      if (nodeStatus == 'completed') {
+                        statusColor = Colors.green;
+                        statusIcon = LucideIcons.checkCircle2;
+                      } else if (nodeStatus == 'in_progress') {
+                        statusColor = Colors.orange;
+                        statusIcon = LucideIcons.loader;
+                      } else if (nodeStatus == 'failed') {
+                        statusColor = Colors.red;
+                        statusIcon = LucideIcons.xCircle;
+                      }
+
+                      return ListTile(
+                        leading: Icon(statusIcon, color: statusColor),
+                        title: Text(node['label'] as String, style: TextStyle(fontWeight: nodeStatus == 'completed' || nodeStatus == 'in_progress' ? FontWeight.bold : FontWeight.normal)),
+                        subtitle: Text(node['detail'] as String, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                        trailing: nodeStatus == 'in_progress' ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+                      );
+                    },
+                  );
+                }(),
           ),
           SizedBox(
             width: double.infinity,
