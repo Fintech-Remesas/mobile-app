@@ -27,17 +27,23 @@ class RemittanceModel {
 
   factory RemittanceModel.fromJson(Map<String, dynamic> json) {
     return RemittanceModel(
-      remittanceId: json['remittanceId'] ?? '',
-      depositCode: json['depositCode'] ?? '',
-      amountUSD: (json['amountUSD'] ?? 0).toDouble(),
-      feeAmount: (json['feeAmount'] ?? 0).toDouble(),
-      amountDestination: (json['amountDestination'] ?? 0).toDouble(),
-      amountSourceCurrency: (json['amountSourceCurrency'] ?? 0).toDouble(),
-      message: json['message'] ?? '',
-      expiresAt: json['expiresAt'] != null ? DateTime.parse(json['expiresAt']) : null,
-      status: json['status'] ?? '',
-      txHash: json['txHash'],
-      userId: json['userId'],
+      remittanceId: json['remittanceId']?.toString() ?? '',
+      depositCode: json['depositCode']?.toString() ?? '',
+      amountUSD: _toDouble(json['amountUSD']),
+      feeAmount: _toDouble(json['feeAmount']),
+      amountDestination: _toDouble(json['amountDestination']),
+      amountSourceCurrency: _toDouble(json['amountSourceCurrency'] ?? json['simulatedAmountPEN']),
+      message: json['message']?.toString() ?? '',
+      expiresAt: json['expiresAt'] != null ? DateTime.tryParse(json['expiresAt'].toString()) : null,
+      status: json['status']?.toString() ?? '',
+      txHash: json['txHash']?.toString(),
+      userId: json['userId']?.toString(),
     );
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
   }
 }

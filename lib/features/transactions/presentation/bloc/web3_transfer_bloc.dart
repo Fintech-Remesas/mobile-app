@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -8,10 +9,8 @@ import '../../data/models/web3/remittance_model.dart';
 import '../../data/models/web3/timeline_model.dart';
 import '../../data/datasources/web3_remote_datasource.dart';
 
-// Events
 abstract class Web3TransferEvent extends Equatable {
   const Web3TransferEvent();
-
   @override
   List<Object?> get props => [];
 }
@@ -48,10 +47,8 @@ class LoadTimelineEvent extends Web3TransferEvent {
   List<Object?> get props => [remittanceId];
 }
 
-// States
 abstract class Web3TransferState extends Equatable {
   const Web3TransferState();
-
   @override
   List<Object?> get props => [];
 }
@@ -107,18 +104,20 @@ class TransferTracking extends Web3TransferState {
 
 class TransferError extends Web3TransferState {
   final String message;
-  const TransferError(this.message);
+  final Web3TransferState? previousState;
+  const TransferError(this.message, {this.previousState});
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, previousState];
 }
 
-// Bloc
 class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
   final Web3RemoteDataSource dataSource;
 
   UserSearchModel? _selectedUser;
   QuoteModel? _quote;
   RemittanceModel? _remittance;
+  Timer? _pollingTimer;
+  static const String _senderCountry = 'PE';
 
   UserSearchModel? get selectedUser => _selectedUser;
   QuoteModel? get quote => _quote;
@@ -142,51 +141,71 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
     }
   }
 
-  void _onSelectUser(SelectUserEvent event, Emitter<Web3TransferState> emit) {
-    _selectedUser = event.user;
-    emit(TransferUserSelected(event.user));
+  Future<void> _onSelectUser(SelectUserEvent event, Emitter<Web3TransferState> emit) async {
+    try {
+      final profile = await dataSource.fetchPublicProfile(event.user.id);
+      _selectedUser = UserSearchModel(
+        id: profile.id,
+        email: profile.email,
+        username: profile.username,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phone: profile.phone,
+        country: profile.country ?? event.user.country ?? 'US',
+      );
+      emit(TransferUserSelected(_selectedUser!));
+    } catch (e) {
+      _selectedUser = event.user.copyWithCountry(event.user.country ?? 'US');
+      emit(TransferUserSelected(_selectedUser!));
+    }
   }
 
   Future<void> _onRequestQuote(RequestQuoteEvent event, Emitter<Web3TransferState> emit) async {
     if (_selectedUser == null) return;
     emit(TransferQuoteLoading(_selectedUser!));
     try {
-      _quote = await dataSource.createQuote(event.amountUSD);
+      _quote = await dataSource.createQuote(
+        event.amountUSD,
+        destinationCountry: _selectedUser!.country ?? 'US',
+        senderCountry: _senderCountry,
+      );
       emit(TransferQuoteLoaded(_selectedUser!, _quote!));
     } catch (e) {
-      emit(TransferError(e.toString()));
+      emit(TransferError(e.toString(), previousState: TransferUserSelected(_selectedUser!)));
     }
   }
 
   Future<void> _onConfirmTransfer(ConfirmTransferEvent event, Emitter<Web3TransferState> emit) async {
     if (_selectedUser == null || _quote == null) return;
-    emit(TransferConfirming(_selectedUser!, _quote!));
+    final confirming = TransferConfirming(_selectedUser!, _quote!);
+    emit(confirming);
     try {
-      // Step 1: Create Remittance
-      // Note: We need mock wallet data if real one isn't available for destination
-      final mockWalletAddress = "0x3D7E4B8F9C1A2E5D6F0B3C8A9E4D1F2B5C7A0E3";
-      final mockBankAccountId = "5d2795c3-769b-45b3-9f0c-9b697db829e2"; // Real mock provided by user
-
       _remittance = await dataSource.createRemittance(
         _quote!.quoteId,
         _selectedUser!.id,
-        mockBankAccountId,
-        mockWalletAddress,
-        "Apoyo desde App Móvil"
+        null,
+        null,
+        'Apoyo desde App Móvil',
+        senderCountry: _senderCountry,
+        recipientCountry: _selectedUser!.country ?? 'US',
       );
 
-      // Step 2: Confirm Deposit immediately as requested
       await dataSource.confirmDeposit(_remittance!.remittanceId);
 
-      // Transition to Tracking state
       emit(TransferTracking(_remittance!, null));
-
-      // Trigger timeline load
       add(LoadTimelineEvent(_remittance!.remittanceId));
-
+      _startPolling(_remittance!.remittanceId);
     } catch (e) {
-      emit(TransferError("Error confirming transfer: ${e.toString()}"));
+      emit(TransferError('Error confirming transfer: ${e.toString()}', previousState: confirming));
     }
+  }
+
+  void _startPolling(String remittanceId) {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (isClosed) return;
+      add(LoadTimelineEvent(remittanceId));
+    });
   }
 
   Future<void> _onLoadTimeline(LoadTimelineEvent event, Emitter<Web3TransferState> emit) async {
@@ -194,10 +213,33 @@ class Web3TransferBloc extends Bloc<Web3TransferEvent, Web3TransferState> {
     try {
       final timeline = await dataSource.getTimeline(event.remittanceId);
       emit(TransferTracking(_remittance!, timeline));
+
+      final status = timeline.currentStatus.toUpperCase();
+      if (status == 'COMPLETED' || status == 'FAILED' || status == 'CANCELLED') {
+        _pollingTimer?.cancel();
+      }
     } catch (e) {
-      debugPrint("Error loading timeline: $e");
-      // Don't emit generic error, just retain tracking state without timeline or show snackbar
-      // But we can emit a new state if needed.
+      debugPrint('Error loading timeline: $e');
     }
+  }
+
+  @override
+  Future<void> close() {
+    _pollingTimer?.cancel();
+    return super.close();
+  }
+}
+
+extension on UserSearchModel {
+  UserSearchModel copyWithCountry(String country) {
+    return UserSearchModel(
+      id: id,
+      email: email,
+      username: username,
+      firstName: firstName,
+      lastName: lastName,
+      phone: phone,
+      country: country,
+    );
   }
 }

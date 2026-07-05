@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -58,14 +59,17 @@ class _TransactionViewState extends State<TransactionView> {
             return _buildTrackingStep(context, state);
           } else if (state is TransferError) {
             final bloc = context.read<Web3TransferBloc>();
+            if (state.previousState is TransferConfirming || (bloc.quote != null && bloc.selectedUser != null && bloc.remittance == null)) {
+              return _buildConfirmStep(context, state);
+            }
             if (bloc.selectedUser == null) {
               return _buildSearchStep(context, state);
             } else if (bloc.quote == null) {
               return _buildAmountStep(context, state);
-            } else if (bloc.remittance == null) {
-              return _buildConfirmStep(context, state);
+            } else if (bloc.remittance != null) {
+              return _buildTrackingStep(context, TransferTracking(bloc.remittance!, null));
             } else {
-              return _buildTrackingStep(context, state);
+              return _buildConfirmStep(context, state);
             }
           }
           return const Center(child: Text('Unknown State'));
@@ -139,7 +143,8 @@ class _TransactionViewState extends State<TransactionView> {
 
   Widget _buildAmountStep(BuildContext context, Web3TransferState state) {
     bool isLoading = state is TransferQuoteLoading;
-    final user = (state is TransferUserSelected) ? state.selectedUser : (state as TransferQuoteLoading).selectedUser;
+    final user = context.read<Web3TransferBloc>().selectedUser;
+    if (user == null) return const SizedBox();
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -178,9 +183,14 @@ class _TransactionViewState extends State<TransactionView> {
   }
 
   Widget _buildConfirmStep(BuildContext context, Web3TransferState state) {
-    bool isConfirming = state is TransferConfirming;
-    final quote = state is TransferQuoteLoaded ? state.quote : (state as TransferConfirming).quote;
-    final user = state is TransferQuoteLoaded ? state.selectedUser : (state as TransferConfirming).selectedUser;
+    final bloc = context.read<Web3TransferBloc>();
+    final quote = bloc.quote;
+    final user = bloc.selectedUser;
+    if (quote == null || user == null) {
+      return const Center(child: Text('Datos incompletos. Vuelve a iniciar la transferencia.'));
+    }
+
+    final bool isConfirming = state is TransferConfirming;
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -197,11 +207,12 @@ class _TransactionViewState extends State<TransactionView> {
                   _buildDetailRow('Destinatario', user.fullName),
                   const Divider(),
                   _buildDetailRow('Envías (USD)', '\$${quote.amountUSD.toStringAsFixed(2)}'),
-                  _buildDetailRow('Tasa de cambio', 'S/ ${quote.exchangeRate.toStringAsFixed(4)}'),
-                  _buildDetailRow('Comisión (${(quote.fee * 100).toStringAsFixed(0)}%)', '-\$${quote.feeAmount.toStringAsFixed(2)}'),
+                  _buildDetailRow('Precio USDC', '\$${quote.usdcPrice.toStringAsFixed(2)}'),
+                  _buildDetailRow('Comisión Sagiro (${(quote.commissionPct * 100).toStringAsFixed(1)}%)', '-\$${quote.feeAmount.toStringAsFixed(2)}'),
+                  _buildDetailRow('Gas Polygon (USD)', '-\$${quote.gasFee.toStringAsFixed(4)}'),
                   const Divider(),
-                  _buildDetailRow('Total a Pagar (USD)', '\$${quote.amountSourceCurrency.toStringAsFixed(2)}', isBold: true),
-                  _buildDetailRow('Recibe (PEN)', 'S/ ${quote.amountDestination.toStringAsFixed(2)}', isBold: true, color: Colors.green),
+                  _buildDetailRow('Recibe el destinatario (USD)', '\$${quote.amountReceivedUSD.toStringAsFixed(2)}', isBold: true, color: Colors.green),
+                  _buildDetailRow('Equivalente local', 'S/ ${(quote.amountReceivedUSD * quote.exchangeRate).toStringAsFixed(2)}'),
                 ],
               ),
             ),
@@ -235,8 +246,19 @@ class _TransactionViewState extends State<TransactionView> {
           const Text('Estado de la Transferencia', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text('Remesa ID: ${remittance.remittanceId}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          if (timeline != null) ...[
+            Text('Estado: ${timeline.currentStatus}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            if (timeline.explorerUrl != null)
+              InkWell(
+                onTap: () => _copyTxHash(context, timeline.explorerUrl!),
+                child: Text('Ver en Polygonscan', style: TextStyle(fontSize: 12, color: Colors.blue[700])),
+              ),
+          ],
           if (timeline != null && timeline.txHash != null)
-            Text('TxHash: ${timeline.txHash}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            InkWell(
+              onTap: () => _copyTxHash(context, timeline.txHash!),
+              child: Text('TxHash: ${timeline.txHash}', style: const TextStyle(fontSize: 12, color: Colors.blue)),
+            ),
           const SizedBox(height: 24),
           Expanded(
             child: timeline == null 
@@ -278,6 +300,13 @@ class _TransactionViewState extends State<TransactionView> {
           )
         ],
       ),
+    );
+  }
+
+  void _copyTxHash(BuildContext context, String txHash) {
+    Clipboard.setData(ClipboardData(text: txHash));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('TxHash copiado. Explorer: amoy.polygonscan.com/tx/$txHash')),
     );
   }
 

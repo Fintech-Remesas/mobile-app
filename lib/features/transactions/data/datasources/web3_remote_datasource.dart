@@ -10,8 +10,17 @@ import '../models/web3/tx_track_model.dart';
 
 abstract class Web3RemoteDataSource {
   Future<List<UserSearchModel>> searchUsers(String query);
-  Future<QuoteModel> createQuote(double amountUSD);
-  Future<RemittanceModel> createRemittance(String quoteId, String destinationUserId, String destinationBankAccountId, String destinationWalletAddress, String note);
+  Future<UserSearchModel> fetchPublicProfile(String userId);
+  Future<QuoteModel> createQuote(double amountUSD, {required String destinationCountry, String senderCountry = 'PE'});
+  Future<RemittanceModel> createRemittance(
+    String quoteId,
+    String destinationUserId,
+    String? destinationBankAccountId,
+    String? destinationWalletAddress,
+    String note, {
+    required String senderCountry,
+    required String recipientCountry,
+  });
   Future<void> confirmDeposit(String remittanceId);
   Future<TimelineModel> getTimeline(String remittanceId);
   Future<TxTrackModel> trackTx(String txHash);
@@ -32,11 +41,24 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     };
   }
 
+  String _extractError(http.Response response, String fallback) {
+    try {
+      final body = json.decode(response.body);
+      if (body is Map) {
+        return body['message']?.toString() ??
+            body['error']?.toString() ??
+            body['detail']?.toString() ??
+            '$fallback (${response.statusCode}): ${response.body}';
+      }
+    } catch (_) {}
+    return '$fallback (${response.statusCode}): ${response.body}';
+  }
+
   @override
   Future<List<UserSearchModel>> searchUsers(String query) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.apiPrefix}/users/search?query=$query');
     final response = await client.get(url, headers: _buildHeaders());
-    
+
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final dynamic data = jsonResponse['data'] ?? jsonResponse;
@@ -50,51 +72,83 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
       }
       return usersList.map((e) => UserSearchModel.fromJson(e)).toList();
     } else {
-      throw Exception('Failed to search users');
+      throw Exception(_extractError(response, 'Error al buscar usuarios'));
     }
   }
 
   @override
-  Future<QuoteModel> createQuote(double amountUSD) async {
+  Future<UserSearchModel> fetchPublicProfile(String userId) async {
+    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.apiPrefix}/users/$userId/public-profile');
+    final response = await client.get(url, headers: _buildHeaders());
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final data = jsonResponse['data'] ?? jsonResponse;
+      return UserSearchModel.fromJson(data as Map<String, dynamic>);
+    }
+    throw Exception(_extractError(response, 'No se pudo obtener el perfil del destinatario'));
+  }
+
+  @override
+  Future<QuoteModel> createQuote(
+    double amountUSD, {
+    required String destinationCountry,
+    String senderCountry = 'PE',
+  }) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.quotesEndpoint}');
     final response = await client.post(
-      url, 
+      url,
       headers: _buildHeaders(includeIdempotency: true),
       body: json.encode({
-        "sourceCurrency": "USD",
-        "destCurrency": "PEN",
-        "destinationCountry": "PE",
-        "amountUSD": amountUSD
-      })
+        'sourceCurrency': 'USD',
+        'destCurrency': destinationCountry == 'PE' ? 'PEN' : 'USD',
+        'destinationCountry': destinationCountry,
+        'senderCountry': senderCountry,
+        'amountUSD': amountUSD,
+      }),
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
-      return QuoteModel.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to create quote');
+      return QuoteModel.fromJson(json.decode(response.body) as Map<String, dynamic>);
     }
+    throw Exception(_extractError(response, 'Error al crear cotización'));
   }
 
   @override
-  Future<RemittanceModel> createRemittance(String quoteId, String destinationUserId, String destinationBankAccountId, String destinationWalletAddress, String note) async {
+  Future<RemittanceModel> createRemittance(
+    String quoteId,
+    String destinationUserId,
+    String? destinationBankAccountId,
+    String? destinationWalletAddress,
+    String note, {
+    required String senderCountry,
+    required String recipientCountry,
+  }) async {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.remittancesEndpoint}');
+    final body = <String, dynamic>{
+      'quoteId': quoteId,
+      'destinationUserId': destinationUserId,
+      'senderCountry': senderCountry,
+      'recipientCountry': recipientCountry,
+      'note': note,
+    };
+    if (destinationBankAccountId != null) {
+      body['destinationBankAccountId'] = destinationBankAccountId;
+    }
+    if (destinationWalletAddress != null && destinationWalletAddress.isNotEmpty) {
+      body['destinationWalletAddress'] = destinationWalletAddress;
+    }
+
     final response = await client.post(
-      url, 
+      url,
       headers: _buildHeaders(includeIdempotency: true),
-      body: json.encode({
-        "quoteId": quoteId,
-        "destinationUserId": destinationUserId,
-        "destinationBankAccountId": destinationBankAccountId,
-        "destinationWalletAddress": destinationWalletAddress,
-        "note": note
-      })
+      body: json.encode(body),
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
-      return RemittanceModel.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to create remittance');
+      return RemittanceModel.fromJson(json.decode(response.body) as Map<String, dynamic>);
     }
+    throw Exception(_extractError(response, 'Error al crear remesa'));
   }
 
   @override
@@ -103,7 +157,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     final response = await client.post(url, headers: _buildHeaders());
 
     if (response.statusCode != 204 && response.statusCode != 200) {
-      throw Exception('Failed to confirm deposit');
+      throw Exception(_extractError(response, 'Error al confirmar pago con tarjeta'));
     }
   }
 
@@ -113,10 +167,9 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     final response = await client.get(url, headers: _buildHeaders());
 
     if (response.statusCode == 200) {
-      return TimelineModel.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to get timeline');
+      return TimelineModel.fromJson(json.decode(response.body) as Map<String, dynamic>);
     }
+    throw Exception(_extractError(response, 'Error al obtener timeline'));
   }
 
   @override
@@ -126,9 +179,8 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
 
     if (response.statusCode == 200) {
       return TxTrackModel.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to track tx');
     }
+    throw Exception(_extractError(response, 'Error al rastrear transacción'));
   }
 
   @override
@@ -138,8 +190,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
 
     if (response.statusCode == 200) {
       return WalletInfoModel.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to get wallet info');
     }
+    throw Exception(_extractError(response, 'Error al obtener info de wallet'));
   }
 }

@@ -1,5 +1,6 @@
 class AppConstants {
   static const String baseUrl = 'http://3.151.248.130:8765';
+  static const String web3SocketUrl = 'http://3.151.248.130:3001';
   static const String apiPrefix = '/api/v1';
 
   // Auth endpoints
