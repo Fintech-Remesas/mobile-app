@@ -34,12 +34,12 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
 
   Web3RemoteDataSourceImpl({required this.client});
 
-  Map<String, String> _buildHeaders({bool includeIdempotency = false}) {
+  Map<String, String> _buildHeaders({String? idempotencyKey}) {
     final token = SessionManager.instance.token;
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
-      if (includeIdempotency) 'X-Idempotency-Key': 'mobile-${DateTime.now().millisecondsSinceEpoch}',
+      if (idempotencyKey != null) 'X-Idempotency-Key': idempotencyKey,
     };
   }
 
@@ -100,7 +100,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
     final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.quotesEndpoint}');
     final response = await client.post(
       url,
-      headers: _buildHeaders(includeIdempotency: true),
+      headers: _buildHeaders(idempotencyKey: 'quote-req-${DateTime.now().millisecondsSinceEpoch}'),
       body: json.encode({
         'sourceCurrency': 'USD',
         'destCurrency': destinationCountry == 'PE' ? 'PEN' : 'USD',
@@ -150,7 +150,7 @@ class Web3RemoteDataSourceImpl implements Web3RemoteDataSource {
 
     final response = await client.post(
       url,
-      headers: _buildHeaders(includeIdempotency: true),
+      headers: _buildHeaders(idempotencyKey: 'remit-req-$quoteId'),
       body: json.encode(body),
     );
 

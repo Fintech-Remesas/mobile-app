@@ -17,11 +17,12 @@ class HistoryLoading extends HistoryState {
 
 class HistoryLoaded extends HistoryState {
   final List<HistoryItem> items;
+  final bool isRefreshing;
 
-  const HistoryLoaded(this.items);
+  const HistoryLoaded(this.items, {this.isRefreshing = false});
 
   @override
-  List<Object?> get props => [items];
+  List<Object?> get props => [items, isRefreshing];
 }
 
 class HistoryError extends HistoryState {

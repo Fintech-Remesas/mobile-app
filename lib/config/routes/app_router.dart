@@ -117,7 +117,10 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/transaction',
-          builder: (context, state) => const TransactionPage(),
+          builder: (context, state) => BlocProvider(
+            create: (_) => sl<ProfileBloc>()..add(const LoadProfile()),
+            child: const TransactionPage(),
+          ),
         ),
         GoRoute(
           path: '/deposit',

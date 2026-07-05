@@ -25,7 +25,7 @@ class UserSearchModel {
     }
 
     return UserSearchModel(
-      id: json['id']?.toString() ?? '',
+      id: (json['keycloakUserId'] ?? json['id'])?.toString() ?? '',
       email: json['email'] ?? '',
       username: json['username'] ?? '',
       firstName: json['firstName'] ?? '',

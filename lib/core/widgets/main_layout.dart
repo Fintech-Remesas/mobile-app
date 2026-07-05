@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+
+import '../../features/home/presentation/bloc/home_bloc.dart';
+import '../../features/history/presentation/bloc/history_bloc.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget child;
@@ -27,10 +31,16 @@ class MainLayout extends StatelessWidget {
         onTap: (index) {
           switch (index) {
             case 0:
+              if (currentIndex == 0) {
+                context.read<HomeBloc>().add(const RefreshHome());
+              }
               context.go('/home');
             case 1:
               context.go('/transaction');
             case 2:
+              if (currentIndex == 2) {
+                context.read<HistoryBloc>().add(const RefreshHistory());
+              }
               context.go('/history');
             case 3:
               context.go('/profile');

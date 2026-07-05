@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,6 +17,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetWalletSummary getWalletSummary;
   final GetRecentTransactions getRecentTransactions;
   final GetLedgerMovements getLedgerMovements;
+  
+  Timer? _pollingTimer;
 
   HomeBloc({
     required this.getWalletSummary,
@@ -24,6 +27,22 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }) : super(const HomeInitial()) {
     on<LoadHome>(_onLoadHome);
     on<RefreshHome>(_onRefreshHome);
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!isClosed) {
+        add(const RefreshHome());
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _pollingTimer?.cancel();
+    return super.close();
   }
 
   Future<void> _onLoadHome(LoadHome event, Emitter<HomeState> emit) async {
