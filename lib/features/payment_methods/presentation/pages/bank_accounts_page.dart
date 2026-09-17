@@ -47,9 +47,7 @@ class _BankAccountsPageState extends State<BankAccountsPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppTheme.bgMain,
         appBar: AppBar(
-          backgroundColor: AppTheme.bgMain,
           title: Text('Mis Cuentas', style: GoogleFonts.plusJakartaSans()),
         ),
         body: BlocBuilder<BankAccountsListBloc, BankAccountsListState>(
@@ -77,12 +75,11 @@ class _BankAccountsPageState extends State<BankAccountsPage> {
                   final domain = _getDomainForBank(account.bankName);
 
                   return Card(
-                    color: Colors.white,
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.grey.shade200),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -151,8 +148,6 @@ class _BankAccountsPageState extends State<BankAccountsPage> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('Agregar nueva cuenta'),

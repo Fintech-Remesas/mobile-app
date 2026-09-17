@@ -48,9 +48,7 @@ class _CardsPageState extends State<CardsPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppTheme.bgMain,
         appBar: AppBar(
-          backgroundColor: AppTheme.bgMain,
           title: Text('Mis Tarjetas', style: GoogleFonts.plusJakartaSans()),
         ),
         body: BlocBuilder<CardsListBloc, CardsListState>(
@@ -78,12 +76,11 @@ class _CardsPageState extends State<CardsPage> {
                   final domain = _getDomainForBrand(card.cardBrand);
 
                   return Card(
-                    color: Colors.white,
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.grey.shade200),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -150,8 +147,6 @@ class _CardsPageState extends State<CardsPage> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('Agregar nueva tarjeta'),

@@ -4,10 +4,13 @@ import 'package:http/http.dart' as http;
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/data/session_manager.dart';
+import '../models/traceability_metrics_model.dart';
 
 abstract class TransactionRemoteDataSource {
   Future<void> deposit(double amount, String currency, String cardId, String description);
   Future<void> withdraw(double amount, String currency, String bankAccountId, String description);
+  Future<Map<String, dynamic>> fetchTransactionDetail(String id);
+  Future<TraceabilityMetricsModel> getTraceabilityMetrics(String remittanceId);
 }
 
 class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
@@ -91,6 +94,59 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
         }
       } catch (_) {}
       throw Exception(message);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> fetchTransactionDetail(String id) async {
+    final token = SessionManager.instance.token;
+    final userId = SessionManager.instance.userId;
+    if (token == null || userId == null) throw Exception('No session token available');
+
+    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.userMovementsEndpoint(userId)}');
+
+    final response = await client.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      final movement = data.firstWhere((m) => m['transactionId'] == id, orElse: () => null);
+      if (movement != null) {
+        return movement as Map<String, dynamic>;
+      } else {
+        throw Exception('Transacción no encontrada');
+      }
+    } else {
+      throw Exception('Failed to load movements: ${response.statusCode}');
+    }
+  }
+
+  @override
+  Future<TraceabilityMetricsModel> getTraceabilityMetrics(String remittanceId) async {
+    // Note: The metrics endpoint is on the web3-remittance-service running on port 3001
+    // We construct the URL directly or assume the API Gateway routes it.
+    // Assuming API gateway routes /api/v1/metrics/traceability to the web3 service
+    final url = Uri.parse('${AppConstants.baseUrl}/api/v1/metrics/traceability/$remittanceId');
+    
+    // Some endpoints might not need auth, but we'll send it anyway
+    final token = SessionManager.instance.token;
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await client.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      return TraceabilityMetricsModel.fromJson(jsonResponse);
+    } else {
+      throw Exception('Failed to load traceability metrics: ${response.statusCode}');
     }
   }
 }

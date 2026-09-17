@@ -24,7 +24,9 @@ import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/settings/presentation/pages/limits_page.dart';
 import '../../features/settings/presentation/pages/notifications_page.dart';
 import '../../features/settings/presentation/pages/security_page.dart';
+import '../../features/settings/presentation/pages/app_preferences_page.dart';
 import '../../features/transactions/presentation/pages/deposit_money_page.dart';
+import '../../features/transactions/presentation/pages/crypto_deposit_page.dart';
 import '../../features/transactions/presentation/pages/transaction_page.dart';
 import '../../features/transactions/presentation/pages/withdraw_money_page.dart';
 
@@ -39,6 +41,7 @@ import '../../features/payment_methods/presentation/pages/add_bank_account_page.
 import '../../features/payment_methods/presentation/pages/add_card_page.dart';
 import '../../features/payment_methods/presentation/pages/bank_accounts_page.dart';
 import '../../features/payment_methods/presentation/pages/cards_page.dart';
+import '../../features/metrics/metrics_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -131,6 +134,10 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const WithdrawMoneyPage(),
         ),
         GoRoute(
+          path: '/crypto-deposit',
+          builder: (context, state) => const CryptoDepositPage(),
+        ),
+        GoRoute(
           path: '/history',
           builder: (context, state) => BlocProvider(
             create: (_) => sl<HistoryBloc>(),
@@ -178,6 +185,10 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/general-settings',
+      builder: (context, state) => const AppPreferencesPage(),
+    ),
+    GoRoute(
       path: '/cards',
       builder: (context, state) => BlocProvider(
         create: (_) => sl<CardsListBloc>(),
@@ -204,6 +215,10 @@ final GoRouter appRouter = GoRouter(
         create: (_) => sl<AddBankAccountBloc>(),
         child: const AddBankAccountPage(),
       ),
+    ),
+    GoRoute(
+      path: '/metrics',
+      builder: (context, state) => const MetricsScreen(),
     ),
   ],
 );

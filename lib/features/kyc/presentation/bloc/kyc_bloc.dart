@@ -32,6 +32,8 @@ class KycBloc extends Bloc<KycEvent, KycState> {
   ) async {
     emit(const KycLoading());
     try {
+      // Simula el tiempo de validación biométrica/documental
+      await Future.delayed(const Duration(seconds: 5));
       await submitKyc(const NoParams());
       emit(const KycSubmitted());
       emit(const KycStatusLoaded(KycStatus.approved));

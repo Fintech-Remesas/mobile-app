@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../bloc/profile_bloc.dart';
 import '../../../kyc/presentation/bloc/kyc_bloc.dart';
 import '../../../kyc/domain/entities/kyc_status.dart';
@@ -12,6 +13,8 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    
     return BlocListener<ProfileBloc, ProfileState>(
       listener: (context, state) {
         if (state is ProfileLoggedOut) {
@@ -19,7 +22,15 @@ class ProfilePage extends StatelessWidget {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
+        appBar: AppBar(
+          title: Text(loc.translate('profile_title')),
+          actions: [
+            IconButton(
+              icon: const Icon(LucideIcons.settings),
+              onPressed: () => context.push('/general-settings'),
+            ),
+          ],
+        ),
         body: BlocBuilder<ProfileBloc, ProfileState>(
           builder: (context, state) {
             if (state is ProfileLoading) {
@@ -57,9 +68,9 @@ class ProfilePage extends StatelessWidget {
                           LucideIcons.userCheck,
                           color: isKycApproved ? Colors.green : Colors.orange,
                         ),
-                        title: const Text('Verificar Identidad'),
+                        title: Text(loc.translate('verify_identity')),
                         subtitle: Text(
-                          isKycApproved ? 'Completado' : 'Requerido para operar',
+                          isKycApproved ? loc.translate('completed') : 'Requerido para operar',
                           style: TextStyle(
                             color: isKycApproved ? Colors.green : Colors.orange,
                           ),
@@ -73,7 +84,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                       ListTile(
                         leading: const Icon(LucideIcons.landmark),
-                        title: const Text('Cuentas Bancarias'),
+                        title: Text(loc.translate('bank_accounts')),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           context.push('/bank-accounts');
@@ -81,7 +92,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                       ListTile(
                         leading: const Icon(LucideIcons.creditCard),
-                        title: const Text('Tarjetas'),
+                        title: Text(loc.translate('cards')),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           context.push('/cards');
@@ -89,19 +100,25 @@ class ProfilePage extends StatelessWidget {
                       ),
                       ListTile(
                         leading: const Icon(LucideIcons.shield),
-                        title: const Text('Security'),
+                        title: Text(loc.translate('security')),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/security'),
                       ),
                       ListTile(
                         leading: const Icon(LucideIcons.activity),
-                        title: const Text('Limits'),
+                        title: Text(loc.translate('limits')),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('/limits'),
                       ),
                       ListTile(
+                        leading: const Icon(LucideIcons.settings),
+                        title: Text(loc.translate('general_settings')),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/general-settings'),
+                      ),
+                      ListTile(
                         leading: const Icon(LucideIcons.logOut, color: Colors.red),
-                        title: const Text('Log Out', style: TextStyle(color: Colors.red)),
+                        title: Text(loc.translate('log_out'), style: const TextStyle(color: Colors.red)),
                         onTap: () => context.read<ProfileBloc>().add(const LogoutRequested()),
                       ),
                     ],

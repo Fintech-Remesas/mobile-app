@@ -12,6 +12,11 @@ class RemittanceModel {
   final String? userId;
   final String? senderName;
   final String? recipientName;
+  final String? senderCountry;
+  final String? recipientCountry;
+  final String? destinationWalletAddress;
+  final String? blockchainTxHash;
+  final int? blockNumber;
 
   RemittanceModel({
     required this.remittanceId,
@@ -27,6 +32,11 @@ class RemittanceModel {
     this.userId,
     this.senderName,
     this.recipientName,
+    this.senderCountry,
+    this.recipientCountry,
+    this.destinationWalletAddress,
+    this.blockchainTxHash,
+    this.blockNumber,
   });
 
   factory RemittanceModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +54,11 @@ class RemittanceModel {
       userId: json['userId']?.toString(),
       senderName: json['senderName']?.toString(),
       recipientName: json['recipientName']?.toString(),
+      senderCountry: json['senderCountry']?.toString(),
+      recipientCountry: json['recipientCountry']?.toString(),
+      destinationWalletAddress: json['destinationWalletAddress']?.toString(),
+      blockchainTxHash: json['blockchainTxHash']?.toString(),
+      blockNumber: json['blockNumber'] != null ? int.tryParse(json['blockNumber'].toString()) : null,
     );
   }
 

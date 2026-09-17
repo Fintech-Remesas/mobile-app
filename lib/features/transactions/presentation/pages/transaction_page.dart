@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/di/injection_container.dart';
 import '../bloc/web3_transfer_bloc.dart';
 import '../../../profile/presentation/bloc/profile_bloc.dart';
+import '../widgets/traceability_metrics_view.dart';
 
 class TransactionPage extends StatelessWidget {
   const TransactionPage({super.key});
@@ -251,63 +252,97 @@ class _TransactionViewState extends State<TransactionView> {
           _buildDetailRow('Monto Transferido:', '\$${remittance.amountUSD.toStringAsFixed(2)} USDC', isBold: true, color: Colors.green),
           _buildDetailRow('Cuenta Destino:', remittance.recipientName ?? 'Receptor', isBold: true),
           const Divider(),
-          Text('Wallet Origen (EE.UU. - ${remittance.senderName ?? 'Usuario'}):', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-          const Text('0x91c8AE9c06dF2a431E16664e3459F157C910827F', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          Text('Wallet Origen (${remittance.senderCountry ?? 'Global'} - ${remittance.senderName ?? 'Usuario'}):', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(remittance.destinationWalletAddress?.isNotEmpty == true ? remittance.destinationWalletAddress! : 'No asignada', style: const TextStyle(fontSize: 10, color: Colors.grey)),
           const SizedBox(height: 4),
-          Text('Wallet Destino (Perú - ${remittance.recipientName ?? 'Receptor'}):', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-          const Text('0xcb3E3A9AF0D72786172fCeb2E27Ab835504daA00', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          Text('Wallet Destino (${remittance.recipientCountry ?? 'Global'} - ${remittance.recipientName ?? 'Receptor'}):', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(remittance.destinationWalletAddress?.isNotEmpty == true ? remittance.destinationWalletAddress! : 'No asignada', style: const TextStyle(fontSize: 10, color: Colors.grey)),
           const Divider(),
           Text('Remesa ID: ${remittance.remittanceId}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          if (timeline != null) ...[
+          if (timeline != null && timeline.currentStatus.toUpperCase() != 'COMPLETED') ...[
             Text('Estado: ${timeline.currentStatus}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             if (timeline.explorerUrl != null)
               InkWell(
                 onTap: () => _copyTxHash(context, timeline.explorerUrl!),
                 child: Text('Ver en Polygonscan', style: TextStyle(fontSize: 12, color: Colors.blue[700])),
               ),
+            if (timeline.txHash != null)
+              InkWell(
+                onTap: () => _copyTxHash(context, timeline.txHash!),
+                child: Text('TxHash: ${timeline.txHash}', style: const TextStyle(fontSize: 12, color: Colors.blue)),
+              ),
           ],
-          if (timeline != null && timeline.txHash != null)
-            InkWell(
-              onTap: () => _copyTxHash(context, timeline.txHash!),
-              child: Text('TxHash: ${timeline.txHash}', style: const TextStyle(fontSize: 12, color: Colors.blue)),
-            ),
           const SizedBox(height: 24),
           Expanded(
             child: timeline == null 
               ? const Center(child: CircularProgressIndicator())
               : () {
                   final status = timeline.currentStatus.toUpperCase();
+                  if (status == 'COMPLETED') {
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(LucideIcons.checkCircle2, color: Colors.green, size: 64),
+                        const SizedBox(height: 16),
+                        const Text('¡Transferencia Exitosa!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green)),
+                        const SizedBox(height: 8),
+                        Text('Tu dinero fue transferido de ${remittance.senderCountry ?? 'origen'} a ${remittance.recipientCountry ?? 'destino'} de manera rápida y segura.', textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                        const SizedBox(height: 32),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6200EE), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          icon: const Icon(LucideIcons.barChart2),
+                          label: const Text('Ver Métricas de Trazabilidad', style: TextStyle(fontWeight: FontWeight.bold)),
+                          onPressed: () {
+                            _showMetricsBottomSheet(context, remittance, timeline);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24), side: const BorderSide(color: Color(0xFF6200EE)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          icon: const Icon(LucideIcons.externalLink, color: Color(0xFF6200EE), size: 18),
+                          label: const Text('Verificar en Polygonscan', style: TextStyle(color: Color(0xFF6200EE))),
+                          onPressed: () {
+                            final url = timeline.explorerUrl ?? (timeline.txHash != null ? 'https://amoy.polygonscan.com/tx/${timeline.txHash}' : '');
+                            if (url.isNotEmpty) {
+                               Clipboard.setData(ClipboardData(text: url));
+                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enlace copiado al portapapeles')));
+                            }
+                          },
+                        )
+                      ],
+                    );
+                  }
+
                   int level = 0;
                   if (status == 'PENDING') level = 1;
                   if (status == 'DEPOSIT_CONFIRMED') level = 2;
                   if (status == 'IN_BLOCKCHAIN') level = 4;
-                  if (status == 'COMPLETED') level = 6;
                   if (status == 'FAILED') level = -1;
 
                   final nodes = [
                     {
-                      'label': 'Firma Criptográfica Local',
-                      'detail': 'Wallet de Sagiro firma la orden con llave privada',
+                      'label': 'Asegurando tu dinero',
+                      'detail': 'Protegiendo la transferencia con criptografía',
                       'status': level > 1 ? 'completed' : (level == 1 ? 'in_progress' : (level == -1 ? 'failed' : 'pending')),
                     },
                     {
-                      'label': 'Difusión a Nodo RPC',
-                      'detail': 'Enviando transacción a Alchemy Gateway (IP: 104.18.23.111)',
+                      'label': 'Conectando internacionalmente',
+                      'detail': 'Enlazando con la red global',
                       'status': level > 2 ? 'completed' : (level == 2 ? 'in_progress' : 'pending'),
                     },
                     {
-                      'label': 'Mempool Pública',
-                      'detail': 'Transacción en cola de red P2P (Polygon Amoy)',
+                      'label': 'Procesando envío',
+                      'detail': 'Tu dinero está en camino',
                       'status': level > 3 ? 'completed' : (level == 3 ? 'in_progress' : 'pending'),
                     },
                     {
-                      'label': 'Ejecución por Nodo Validador',
-                      'detail': 'Validador #${timeline.txHash != null && timeline.txHash!.length > 6 ? timeline.txHash!.substring(2, 6) : "0x4"} (IP: 54.12.${timeline.txHash != null && timeline.txHash!.length > 6 ? timeline.txHash!.codeUnitAt(2) % 255 : 44}.${timeline.txHash != null && timeline.txHash!.length > 6 ? timeline.txHash!.codeUnitAt(3) % 255 : 12})',
+                      'label': 'Validando seguridad',
+                      'detail': 'Múltiples servidores globales confirman tu envío',
                       'status': level > 4 ? 'completed' : (level == 4 ? 'in_progress' : 'pending'),
                     },
                     {
-                      'label': 'Confirmación Descentralizada',
-                      'detail': 'Bloque minado inmutablemente en la blockchain',
+                      'label': 'Transferencia completada',
+                      'detail': 'El dinero llegó a su destino y fue registrado inmutablemente',
                       'status': level > 5 ? 'completed' : (level == 5 ? 'in_progress' : 'pending'),
                     },
                   ];
@@ -332,11 +367,57 @@ class _TransactionViewState extends State<TransactionView> {
                         statusIcon = LucideIcons.xCircle;
                       }
 
-                      return ListTile(
-                        leading: Icon(statusIcon, color: statusColor),
-                        title: Text(node['label'] as String, style: TextStyle(fontWeight: nodeStatus == 'completed' || nodeStatus == 'in_progress' ? FontWeight.bold : FontWeight.normal)),
-                        subtitle: Text(node['detail'] as String, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
-                        trailing: nodeStatus == 'in_progress' ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: nodeStatus == 'in_progress' ? 4 : 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: nodeStatus == 'in_progress' ? Colors.orange.withOpacity(0.5) : Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(statusIcon, color: statusColor, size: 24),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      node['label'] as String, 
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: nodeStatus == 'completed' || nodeStatus == 'in_progress' ? FontWeight.bold : FontWeight.normal,
+                                        color: nodeStatus == 'pending' ? Colors.grey : Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      node['detail'] as String, 
+                                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (nodeStatus == 'in_progress')
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 12.0),
+                                  child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange)),
+                                ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   );
@@ -372,6 +453,18 @@ class _TransactionViewState extends State<TransactionView> {
           Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
           Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: color)),
         ],
+      ),
+    );
+  }
+
+  void _showMetricsBottomSheet(BuildContext context, dynamic remittance, dynamic timeline) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TraceabilityMetricsView(
+        remittance: remittance,
+        timeline: timeline,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../theme/app_theme.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -10,6 +11,8 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -37,7 +40,7 @@ class WelcomePage extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Instant transfers, 100% secure',
+                      loc.translate('welcome_title'),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: AppTheme.textSecondary,
@@ -53,18 +56,22 @@ class WelcomePage extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 52),
                         ),
-                        child: const Text('Create Account'),
+                        child: Text(loc.translate('create_account')),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
-                      child: TextButton(
+                      child: OutlinedButton(
                         onPressed: () => context.push('/login'),
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 48),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: const Text('Log In'),
+                        child: Text(loc.translate('log_in')),
                       ),
                     ),
                   ],

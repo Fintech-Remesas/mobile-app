@@ -69,10 +69,10 @@ class HistoryPage extends StatelessWidget {
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                         child: Text(
                           monthYearStr,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black54,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                           ),
                         ),
                       ),

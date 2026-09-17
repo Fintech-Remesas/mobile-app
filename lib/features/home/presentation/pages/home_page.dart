@@ -133,6 +133,50 @@ class HomePage extends StatelessWidget {
 
                         // Tarjeta de saldo — datos reales del ledger
                         BalanceCard(wallet: state.wallet),
+                        const SizedBox(height: 16),
+                        
+                        // Botón de Auditoría Blockchain (Tesis)
+                        GestureDetector(
+                          onTap: () => context.push('/metrics'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF5F59F7), Color(0xFF8B5CF6)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.security, color: Colors.white),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Auditoría y Trazabilidad',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Ver métricas on-chain en tiempo real',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
                         const SizedBox(height: 24),
                         QuickActionsRow(enabled: isKycApproved),
                         const SizedBox(height: 32),

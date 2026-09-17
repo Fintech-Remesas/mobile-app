@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:camera/camera.dart';
 
 import '../../../../theme/app_theme.dart';
 import '../../../../core/data/session_manager.dart';
@@ -1038,12 +1039,91 @@ class _Step3 extends StatefulWidget {
 class _Step3State extends State<_Step3> {
   int _kycSubStep = 0;
   bool _dniCaptured = false;
+  bool _dniBackCaptured = false;
   bool _selfieCaptured = false;
+
+  CameraController? _cameraController;
+  List<CameraDescription>? _cameras;
+  bool _isCameraInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initCameras();
+  }
+
+  Future<void> _initCameras() async {
+    try {
+      _cameras = await availableCameras();
+      if (_cameras != null && _cameras!.isNotEmpty) {
+        await _setupCameraController(isSelfie: false);
+      }
+    } catch (e) {
+      debugPrint('Error init cameras: $e');
+    }
+  }
+
+  Future<void> _setupCameraController({required bool isSelfie}) async {
+    if (_cameras == null || _cameras!.isEmpty) return;
+    
+    if (mounted) setState(() => _isCameraInitialized = false);
+    
+    CameraDescription? targetCamera;
+    if (isSelfie) {
+      targetCamera = _cameras!.firstWhere((c) => c.lensDirection == CameraLensDirection.front, orElse: () => _cameras!.first);
+    } else {
+      targetCamera = _cameras!.firstWhere((c) => c.lensDirection == CameraLensDirection.back, orElse: () => _cameras!.first);
+    }
+
+    await _cameraController?.dispose();
+    
+    _cameraController = CameraController(
+      targetCamera,
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+    
+    try {
+      await _cameraController!.initialize();
+      if (mounted) {
+        setState(() {
+          _isCameraInitialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing camera controller: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _cameraController?.dispose();
+    super.dispose();
+  }
 
   void _nextSubStep() {
     setState(() {
       _kycSubStep++;
     });
+    if (_kycSubStep == 1 || _kycSubStep == 2) {
+      _setupCameraController(isSelfie: false);
+    } else if (_kycSubStep == 3) {
+      _setupCameraController(isSelfie: true);
+    }
+  }
+
+  Future<void> _captureImage({required bool isSelfie, required VoidCallback onCaptured}) async {
+    if (_cameraController != null && _cameraController!.value.isInitialized) {
+      try {
+        await _cameraController!.takePicture();
+        onCaptured();
+      } catch (e) {
+        debugPrint('Error tomando foto: $e');
+        onCaptured(); // Fallback
+      }
+    } else {
+      onCaptured(); // Fallback
+    }
   }
 
   void _submit() {
@@ -1063,7 +1143,7 @@ class _Step3State extends State<_Step3> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
           );
-          setState(() => _kycSubStep = 2);
+          setState(() => _kycSubStep = 3);
         }
       },
       child: SingleChildScrollView(
@@ -1094,11 +1174,20 @@ class _Step3State extends State<_Step3> {
       return _buildIntro();
     } else if (_kycSubStep == 1) {
       return _buildCapture(
-        title: 'Foto de tu DNI',
+        title: 'Foto de tu DNI (Frente)',
         subtitle: 'Asegúrate de que los datos sean legibles y no haya reflejos.',
         icon: Icons.badge_outlined,
         isCaptured: _dniCaptured,
-        onCapture: () => setState(() => _dniCaptured = true),
+        onCapture: () => _captureImage(isSelfie: false, onCaptured: () => setState(() => _dniCaptured = true)),
+        onNext: _nextSubStep,
+      );
+    } else if (_kycSubStep == 2) {
+      return _buildCapture(
+        title: 'Foto de tu DNI (Reverso)',
+        subtitle: 'Asegúrate de que los datos de la parte posterior sean legibles.',
+        icon: Icons.credit_card_outlined,
+        isCaptured: _dniBackCaptured,
+        onCapture: () => _captureImage(isSelfie: false, onCaptured: () => setState(() => _dniBackCaptured = true)),
         onNext: _nextSubStep,
       );
     } else {
@@ -1107,8 +1196,9 @@ class _Step3State extends State<_Step3> {
         subtitle: 'Ubícate en un lugar iluminado y quítate lentes o gorras.',
         icon: Icons.face_rounded,
         isCaptured: _selfieCaptured,
-        onCapture: () => setState(() => _selfieCaptured = true),
+        onCapture: () => _captureImage(isSelfie: true, onCaptured: () => setState(() => _selfieCaptured = true)),
         onNext: _submit,
+        isSelfie: true,
       );
     }
   }
@@ -1161,6 +1251,7 @@ class _Step3State extends State<_Step3> {
     required bool isCaptured,
     required VoidCallback onCapture,
     required VoidCallback onNext,
+    bool isSelfie = false,
   }) {
     return Column(
       key: ValueKey(title),
@@ -1184,47 +1275,63 @@ class _Step3State extends State<_Step3> {
           ),
         ),
         const SizedBox(height: 24),
-        GestureDetector(
-          onTap: onCapture,
-          child: Container(
-            height: 180,
-            decoration: BoxDecoration(
-              color: isCaptured
-                  ? AppTheme.accentGreen.withOpacity(0.1)
-                  : AppTheme.surfaceLight,
-              border: Border.all(
+        Align(
+          alignment: Alignment.center,
+          child: GestureDetector(
+            onTap: onCapture,
+            child: Container(
+              height: isSelfie ? 200 : 180,
+              width: isSelfie ? 200 : double.infinity,
+              decoration: BoxDecoration(
+                shape: isSelfie ? BoxShape.circle : BoxShape.rectangle,
                 color: isCaptured
-                    ? AppTheme.accentGreen
-                    : AppTheme.borderColor,
-                width: 2,
+                    ? AppTheme.accentGreen.withOpacity(0.1)
+                    : AppTheme.surfaceLight,
+                border: Border.all(
+                  color: isCaptured
+                      ? AppTheme.accentGreen
+                      : AppTheme.borderColor,
+                  width: 2,
+                ),
+                borderRadius: isSelfie ? null : BorderRadius.circular(16),
               ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: isCaptured
-                  ? const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle_rounded,
-                            size: 48, color: AppTheme.accentGreen),
-                        SizedBox(height: 12),
-                        Text('Captura exitosa',
-                            style: TextStyle(
-                                color: AppTheme.accentGreen,
-                                fontWeight: FontWeight.bold)),
-                      ],
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(icon, size: 48, color: AppTheme.primaryBlue),
-                        const SizedBox(height: 12),
-                        const Text('Toca para tomar foto',
-                            style: TextStyle(
-                                color: AppTheme.primaryBlue,
-                                fontWeight: FontWeight.w600)),
-                      ],
-                    ),
+              child: Center(
+                child: isCaptured
+                    ? const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded,
+                              size: 48, color: AppTheme.accentGreen),
+                          SizedBox(height: 12),
+                          Text('Captura exitosa',
+                              style: TextStyle(
+                                  color: AppTheme.accentGreen,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      )
+                    : (_isCameraInitialized && _cameraController != null)
+                        ? SizedBox(
+                            width: double.infinity,
+                            height: double.infinity,
+                            child: isSelfie
+                                ? ClipOval(child: CameraPreview(_cameraController!))
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: CameraPreview(_cameraController!),
+                                  ),
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(icon, size: 48, color: AppTheme.primaryBlue),
+                              const SizedBox(height: 12),
+                              const Text('Toca para tomar foto',
+                                  style: TextStyle(
+                                      color: AppTheme.primaryBlue,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+              ),
             ),
           ),
         ),

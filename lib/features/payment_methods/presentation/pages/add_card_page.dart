@@ -69,9 +69,7 @@ class _AddCardPageState extends State<AddCardPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppTheme.bgMain,
         appBar: AppBar(
-          backgroundColor: AppTheme.bgMain,
           title: Text('Agregar Tarjeta', style: GoogleFonts.plusJakartaSans()),
         ),
         body: SingleChildScrollView(
@@ -186,8 +184,6 @@ class _AddCardPageState extends State<AddCardPage> {
                       child: ElevatedButton(
                         onPressed: isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryBlue,
-                          foregroundColor: Colors.white,
                         ),
                         child: isLoading
                             ? const CircularProgressIndicator(color: Colors.white)

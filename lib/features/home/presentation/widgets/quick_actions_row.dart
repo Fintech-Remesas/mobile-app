@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+
+import '../bloc/home_bloc.dart';
 
 class QuickActionsRow extends StatelessWidget {
   final bool enabled;
@@ -42,6 +45,22 @@ class QuickActionsRow extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 12),
             backgroundColor: Colors.blue[700], // distinct color
+            foregroundColor: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: enabled ? () async {
+            await context.push('/crypto-deposit');
+            if (context.mounted) {
+              context.read<HomeBloc>().add(const LoadHome());
+            }
+          } : null,
+          icon: const Icon(LucideIcons.bitcoin),
+          label: const Text('Recargar Crypto'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            backgroundColor: Colors.purple,
             foregroundColor: Colors.white,
           ),
         ),

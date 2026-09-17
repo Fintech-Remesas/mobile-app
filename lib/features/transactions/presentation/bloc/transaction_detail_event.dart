@@ -15,3 +15,12 @@ class LoadTransactionDetail extends TransactionDetailEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class LoadTraceabilityMetrics extends TransactionDetailEvent {
+  final String remittanceId;
+
+  const LoadTraceabilityMetrics(this.remittanceId);
+
+  @override
+  List<Object?> get props => [remittanceId];
+}

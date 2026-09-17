@@ -17,11 +17,22 @@ class TransactionDetailLoading extends TransactionDetailState {
 
 class TransactionDetailLoaded extends TransactionDetailState {
   final TransactionDetail detail;
+  final TraceabilityMetrics? traceabilityMetrics;
 
-  const TransactionDetailLoaded(this.detail);
+  const TransactionDetailLoaded(this.detail, {this.traceabilityMetrics});
+
+  TransactionDetailLoaded copyWith({
+    TransactionDetail? detail,
+    TraceabilityMetrics? traceabilityMetrics,
+  }) {
+    return TransactionDetailLoaded(
+      detail ?? this.detail,
+      traceabilityMetrics: traceabilityMetrics ?? this.traceabilityMetrics,
+    );
+  }
 
   @override
-  List<Object?> get props => [detail];
+  List<Object?> get props => [detail, traceabilityMetrics];
 }
 
 class TransactionDetailError extends TransactionDetailState {

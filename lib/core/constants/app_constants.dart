@@ -1,6 +1,8 @@
 class AppConstants {
-  static const String baseUrl = 'http://3.151.248.130:8765';
-  static const String web3SocketUrl = 'http://3.151.248.130:3001';
+  // Si usas un dispositivo físico o tu propio celular por Wi-Fi, usa tu IP local.
+  // 10.0.2.2 es SOLO para el emulador de Android.
+  static const String baseUrl = 'http://192.168.1.33:8765';
+  static const String web3SocketUrl = 'http://192.168.1.33:3001';
   static const String apiPrefix = '/api/v1';
 
   // Auth endpoints
@@ -43,4 +45,15 @@ class AppConstants {
   static String statusTxEndpoint(String txHash) => 
       '$apiPrefix/tx/$txHash/status';
   static const String walletInfoEndpoint = '$apiPrefix/tx/wallet/info';
+
+  // Metrics endpoints (Tesis)
+  static const String traceabilityMetricsEndpoint = '$apiPrefix/metrics/traceability';
+  static const String traceabilityExportEndpoint = '$apiPrefix/metrics/traceability/export';
+  static String unitaryMetricsEndpoint(String remittanceId) =>
+      '$apiPrefix/metrics/remittance/$remittanceId';
+
+  // RPC público para verificación independiente (sin pasar por backend Sagiro)
+  static const String polygonAmoyRpcUrl = 'https://rpc-amoy.polygon.technology';
+  static const String registryContractAddress = '0xYOUR_CONTRACT_ADDRESS'; // actualizar al desplegar
+  static const String polygonscanBaseUrl = 'https://amoy.polygonscan.com';
 }

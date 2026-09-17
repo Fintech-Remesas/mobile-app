@@ -91,9 +91,7 @@ class _AddBankAccountPageState extends State<AddBankAccountPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppTheme.bgMain,
         appBar: AppBar(
-          backgroundColor: AppTheme.bgMain,
           title: Text('Agregar Cuenta', style: GoogleFonts.plusJakartaSans()),
         ),
         body: SingleChildScrollView(
@@ -202,8 +200,6 @@ class _AddBankAccountPageState extends State<AddBankAccountPage> {
                       child: ElevatedButton(
                         onPressed: isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryBlue,
-                          foregroundColor: Colors.white,
                         ),
                         child: isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
