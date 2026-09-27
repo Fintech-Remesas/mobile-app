@@ -40,3 +40,12 @@ class HomeError extends HomeState {
   @override
   List<Object?> get props => [message];
 }
+
+class HomeActionFailure extends HomeState {
+  final String message;
+
+  const HomeActionFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

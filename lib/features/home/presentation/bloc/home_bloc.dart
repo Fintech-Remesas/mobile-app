@@ -10,6 +10,8 @@ import '../../domain/usecases/get_ledger_movements.dart';
 import '../../domain/usecases/get_recent_transactions.dart';
 import '../../domain/usecases/get_wallet_summary.dart';
 
+import '../../domain/usecases/claim_initial_bonus.dart';
+
 part 'home_event.dart';
 part 'home_state.dart';
 
@@ -17,6 +19,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetWalletSummary getWalletSummary;
   final GetRecentTransactions getRecentTransactions;
   final GetLedgerMovements getLedgerMovements;
+  final ClaimInitialBonus claimInitialBonus;
   
   Timer? _pollingTimer;
 
@@ -24,9 +27,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required this.getWalletSummary,
     required this.getRecentTransactions,
     required this.getLedgerMovements,
+    required this.claimInitialBonus,
   }) : super(const HomeInitial()) {
     on<LoadHome>(_onLoadHome);
     on<RefreshHome>(_onRefreshHome);
+    on<ClaimInitialBonusEvent>(_onClaimInitialBonus);
     _startPolling();
   }
 
@@ -79,6 +84,21 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       ));
     } catch (e) {
       emit(HomeError(e.toString()));
+    }
+  }
+
+  Future<void> _onClaimInitialBonus(ClaimInitialBonusEvent event, Emitter<HomeState> emit) async {
+    final currentState = state;
+    try {
+      await claimInitialBonus(const NoParams());
+      add(const LoadHome());
+    } catch (e) {
+      emit(HomeActionFailure(e.toString()));
+      if (currentState is HomeLoaded) {
+        emit(currentState);
+      } else {
+        add(const LoadHome());
+      }
     }
   }
 }

@@ -30,11 +30,24 @@ class HomePage extends StatelessWidget {
           final isKycApproved =
               kycState is KycStatusLoaded && kycState.status == KycStatus.approved;
 
-          return BlocBuilder<HomeBloc, HomeState>(
-            builder: (context, state) {
-              if (state is HomeLoading) {
-                return const Center(child: CircularProgressIndicator());
+          return BlocListener<HomeBloc, HomeState>(
+            listener: (context, state) {
+              if (state is HomeActionFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                // Also trigger a refresh in case the UI is out of sync
+                context.read<HomeBloc>().add(const LoadHome());
               }
+            },
+            child: BlocBuilder<HomeBloc, HomeState>(
+              builder: (context, state) {
+                if (state is HomeLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
               if (state is HomeError) {
                 return Center(
@@ -131,6 +144,53 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
 
+                        if (state is HomeLoaded && state.wallet.bonusEligible)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 24),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              border: Border.all(color: Colors.green),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.card_giftcard, color: Colors.green),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        '¡Felicidades! Tienes un bono',
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      const Text(
+                                        'Reclama tu bono de bienvenida de \$1 USDC por completar tu registro.',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      GestureDetector(
+                                        onTap: () {
+                                          context.read<HomeBloc>().add(const ClaimInitialBonusEvent());
+                                        },
+                                        child: const Text(
+                                          'Pedir bono de 1 dólar',
+                                          style: TextStyle(
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.bold,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
                         // Tarjeta de saldo — datos reales del ledger
                         BalanceCard(wallet: state.wallet),
                         const SizedBox(height: 16),
@@ -191,9 +251,10 @@ class HomePage extends StatelessWidget {
 
               return const SizedBox.shrink();
             },
-          );
-        },
-      ),
-    );
+          ),
+        );
+      },
+    ),
+  );
   }
 }

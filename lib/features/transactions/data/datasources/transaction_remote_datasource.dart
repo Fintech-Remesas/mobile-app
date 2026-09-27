@@ -24,7 +24,7 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
     final token = SessionManager.instance.token;
     if (token == null) throw Exception('No session token available');
 
-    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.apiPrefix}/accounts/deposit');
+    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.apiPrefix}/users/me/deposit');
 
     final body = {
       'amount': amount,

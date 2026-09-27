@@ -59,18 +59,15 @@ class _RegisterPageState extends State<RegisterPage> {
 
   static const _countries = [
     ('PE', 'Perú'),
-    ('MX', 'México'),
-    ('CO', 'Colombia'),
-    ('AR', 'Argentina'),
     ('CL', 'Chile'),
-    ('US', 'United States'),
-    ('ES', 'España'),
   ];
 
   static const _languages = [
     ('es', 'Español'),
     ('en', 'English'),
   ];
+
+  String? _createdUserId;
 
   @override
   void dispose() {
@@ -106,9 +103,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _goToStep(int stepIndex) {
     if (stepIndex == 5) {
-      final authState = context.read<AuthBloc>().state;
-      final userId = authState is AuthRegisterSuccess ? authState.createdUserId : 'User';
-      _showSuccessDialog(userId);
+      // Al finalizar todos los pasos, intentamos reclamar el bono
+      context.read<AuthBloc>().add(const ClaimWelcomeBonusSubmitted());
       return;
     }
     _pageController.animateToPage(
@@ -148,8 +144,16 @@ class _RegisterPageState extends State<RegisterPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthRegisterSuccess) {
+          _createdUserId = state.createdUserId;
           _goToStep(2); // Al finalizar registro y auto-login, pasamos al KYC
+        } else if (state is AuthClaimWelcomeBonusSuccess) {
+          _showSuccessDialog(_createdUserId ?? 'User', bonusClaimed: true);
         } else if (state is AuthFailure) {
+          if (_currentStep == 4) {
+            // Si falló el reclamo del bono (ej. falta algo), igual mostramos que la cuenta se creó
+            _showSuccessDialog(_createdUserId ?? 'User', bonusClaimed: false);
+            return; // No mostramos el error rojo porque el bono se evalúa silenciosamente en el Home
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message,
@@ -163,7 +167,9 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         }
       },
-      child: Scaffold(
+      child: Stack(
+        children: [
+          Scaffold(
         backgroundColor: AppTheme.bgMain,
         appBar: AppBar(
           backgroundColor: AppTheme.bgMain,
@@ -268,10 +274,24 @@ class _RegisterPageState extends State<RegisterPage> {
           ],
         ),
       ),
+
+          BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, state) {
+              if (state is AuthLoading && _currentStep == 4) {
+                return Container(
+                  color: Colors.black45,
+                  child: const Center(child: CircularProgressIndicator(color: AppTheme.primaryBlue)),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
     );
   }
 
-  void _showSuccessDialog(String userId) {
+  void _showSuccessDialog(String userId, {bool bonusClaimed = false}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -304,7 +324,9 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tu cuenta fue registrada exitosamente.',
+                bonusClaimed 
+                    ? 'Tu cuenta fue registrada exitosamente y tu bono de \$1 USDC ha sido depositado.'
+                    : 'Tu cuenta fue registrada exitosamente.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13,

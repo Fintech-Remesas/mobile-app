@@ -59,3 +59,7 @@ class VerifyOtpSubmitted extends AuthEvent {
   @override
   List<Object?> get props => [code];
 }
+
+class ClaimWelcomeBonusSubmitted extends AuthEvent {
+  const ClaimWelcomeBonusSubmitted();
+}

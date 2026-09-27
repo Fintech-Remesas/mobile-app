@@ -17,6 +17,7 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
     SessionManager.instance.setSession(response.accessToken);
+
   }
 
   @override
@@ -47,5 +48,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> verifyOtp({required String code}) async {
     // TODO: implement when OTP endpoint is available in backend
     await Future.delayed(const Duration(seconds: 1));
+  }
+
+  @override
+  Future<void> claimWelcomeBonus() async {
+    await remoteDataSource.claimWelcomeBonus();
   }
 }

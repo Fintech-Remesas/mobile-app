@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/data/session_manager.dart';
 
 import '../../domain/entities/traceability_aggregate.dart';
 
@@ -23,10 +24,16 @@ class MetricsRemoteDataSource {
     if (corridor != 'all') queryParams['corridor'] = corridor;
 
     final url = Uri.parse(
-      '${AppConstants.web3SocketUrl}${AppConstants.traceabilityMetricsEndpoint}',
+      '${AppConstants.baseUrl}${AppConstants.traceabilityMetricsEndpoint}',
     ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
 
-    final response = await client.get(url);
+    final token = SessionManager.instance.token;
+    final headers = <String, String>{};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await client.get(url, headers: headers);
 
     if (response.statusCode == 200) {
       final body = json.decode(response.body) as Map<String, dynamic>;
@@ -41,10 +48,16 @@ class MetricsRemoteDataSource {
   /// Obtiene métricas unitarias de una remesa.
   Future<Map<String, dynamic>> getUnitaryMetrics(String remittanceId) async {
     final url = Uri.parse(
-      '${AppConstants.web3SocketUrl}${AppConstants.unitaryMetricsEndpoint(remittanceId)}',
+      '${AppConstants.baseUrl}${AppConstants.unitaryMetricsEndpoint(remittanceId)}',
     );
 
-    final response = await client.get(url);
+    final token = SessionManager.instance.token;
+    final headers = <String, String>{};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await client.get(url, headers: headers);
 
     if (response.statusCode == 200) {
       return json.decode(response.body) as Map<String, dynamic>;

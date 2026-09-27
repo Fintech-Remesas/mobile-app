@@ -5,6 +5,8 @@ import '../../domain/repositories/home_repository.dart';
 import '../datasources/home_local_datasource.dart';
 import '../datasources/home_remote_datasource.dart';
 import '../models/wallet_summary_model.dart';
+import '../../../../core/data/session_manager.dart';
+import '../../../../core/constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 
 class HomeRepositoryImpl implements HomeRepository {
@@ -13,12 +15,13 @@ class HomeRepositoryImpl implements HomeRepository {
 
   HomeRepositoryImpl({
     required this.localDataSource,
-    HomeRemoteDataSource? remoteDataSource,
-  }) : remoteDataSource =
-            remoteDataSource ?? HomeRemoteDataSourceImpl(client: http.Client());
+    required this.remoteDataSource,
+  });
 
   @override
   Future<WalletSummary> getWalletSummary() async {
+    // We no longer silently claim the welcome bonus here, the user claims it via UI.
+
     try {
       return await remoteDataSource.fetchWalletSummary('');
     } catch (e) {
@@ -31,6 +34,28 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<List<TransactionPreview>> getRecentTransactions() {
     return localDataSource.fetchRecentTransactions();
+  }
+
+  @override
+  Future<void> claimInitialBonus() async {
+    final token = SessionManager.instance.token;
+    if (token == null) {
+      throw Exception('No token found');
+    }
+
+    // Usamos el endpoint claim-welcome-bonus
+    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.claimWelcomeBonusEndpoint}');
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to claim bonus: ${response.statusCode} - ${response.body}');
+    }
   }
 
   @override

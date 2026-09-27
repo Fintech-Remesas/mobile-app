@@ -11,4 +11,5 @@ abstract class AuthRepository {
     String? initialPassword,
   });
   Future<void> verifyOtp({required String code});
+  Future<void> claimWelcomeBonus();
 }

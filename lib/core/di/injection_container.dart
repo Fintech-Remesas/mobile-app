@@ -1,12 +1,16 @@
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 
+import '../../core/data/session_interceptor_client.dart';
+import '../../core/data/session_manager.dart';
+
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/usecases/login.dart';
 import '../../features/auth/domain/usecases/register_user.dart';
 import '../../features/auth/domain/usecases/verify_otp.dart';
+import '../../features/auth/domain/usecases/claim_welcome_bonus.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/history/data/datasources/history_remote_datasource.dart';
 import '../../features/history/data/repositories/history_repository_impl.dart';
@@ -14,11 +18,13 @@ import '../../features/history/domain/repositories/history_repository.dart';
 import '../../features/history/domain/usecases/get_transaction_history.dart';
 import '../../features/history/presentation/bloc/history_bloc.dart';
 import '../../features/home/data/datasources/home_local_datasource.dart';
+import '../../features/home/data/datasources/home_remote_datasource.dart';
 import '../../features/home/data/repositories/home_repository_impl.dart';
 import '../../features/home/domain/repositories/home_repository.dart';
 import '../../features/home/domain/usecases/get_ledger_movements.dart';
 import '../../features/home/domain/usecases/get_recent_transactions.dart';
 import '../../features/home/domain/usecases/get_wallet_summary.dart';
+import '../../features/home/domain/usecases/claim_initial_bonus.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
 import '../../features/kyc/data/datasources/kyc_local_datasource.dart';
 import '../../features/kyc/data/repositories/kyc_repository_impl.dart';
@@ -50,7 +56,6 @@ import '../../features/transactions/domain/usecases/get_transaction_detail.dart'
 import '../../features/transactions/domain/usecases/deposit_funds.dart';
 import '../../features/transactions/domain/usecases/withdraw_funds.dart';
 import '../../features/transactions/domain/usecases/get_traceability_metrics.dart';
-import '../../features/transactions/domain/usecases/withdraw_funds.dart';
 import '../../features/transactions/presentation/bloc/send_bloc.dart';
 import '../../features/transactions/presentation/bloc/deposit_bloc.dart';
 import '../../features/transactions/presentation/bloc/withdraw_bloc.dart';
@@ -76,7 +81,13 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   sl.registerLazySingleton(() => MockDataSource());
-  sl.registerLazySingleton(() => http.Client());
+  sl.registerLazySingleton<http.Client>(() {
+    final innerClient = http.Client();
+    return SessionInterceptorClient(
+      innerClient,
+      onSessionExpired: () => SessionManager.instance.notifySessionExpired(),
+    );
+  });
 
   // Auth
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -88,8 +99,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => Login(sl()));
   sl.registerLazySingleton(() => RegisterUser(sl()));
   sl.registerLazySingleton(() => VerifyOtp(sl()));
+  sl.registerLazySingleton(() => ClaimWelcomeBonus(sl()));
   sl.registerFactory(
-    () => AuthBloc(login: sl(), registerUser: sl(), verifyOtp: sl()),
+    () => AuthBloc(
+      login: sl(),
+      registerUser: sl(),
+      verifyOtp: sl(),
+      claimWelcomeBonus: sl(),
+    ),
   );
 
   // KYC
@@ -114,17 +131,22 @@ Future<void> init() async {
   sl.registerLazySingleton<HomeLocalDataSource>(
     () => HomeLocalDataSourceImpl(mockDataSource: sl()),
   );
+  sl.registerLazySingleton<HomeRemoteDataSource>(
+    () => HomeRemoteDataSourceImpl(client: sl()),
+  );
   sl.registerLazySingleton<HomeRepository>(
-    () => HomeRepositoryImpl(localDataSource: sl()),
+    () => HomeRepositoryImpl(localDataSource: sl(), remoteDataSource: sl()),
   );
   sl.registerLazySingleton(() => GetWalletSummary(sl()));
   sl.registerLazySingleton(() => GetRecentTransactions(sl()));
   sl.registerLazySingleton(() => GetLedgerMovements(sl()));
+  sl.registerLazySingleton(() => ClaimInitialBonus(sl()));
   sl.registerFactory(
     () => HomeBloc(
       getWalletSummary: sl(),
       getRecentTransactions: sl(),
       getLedgerMovements: sl(),
+      claimInitialBonus: sl(),
     )..add(const LoadHome()),
   );
 
@@ -177,7 +199,7 @@ Future<void> init() async {
 
   // Profile
   sl.registerLazySingleton<ProfileLocalDataSource>(
-    () => ProfileLocalDataSourceImpl(mockDataSource: sl()),
+    () => ProfileLocalDataSourceImpl(mockDataSource: sl(), client: sl()),
   );
   sl.registerLazySingleton<ProfileRepository>(
     () => ProfileRepositoryImpl(localDataSource: sl()),

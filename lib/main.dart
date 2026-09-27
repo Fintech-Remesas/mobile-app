@@ -7,6 +7,7 @@ import 'config/routes/app_router.dart';
 import 'core/di/injection_container.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/presentation/cubit/app_preferences_cubit.dart';
+import 'core/data/session_manager.dart';
 import 'theme/app_theme.dart';
 class MyHttpOverrides extends HttpOverrides{
   @override
@@ -20,6 +21,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
   await init();
+  
+  SessionManager.instance.onSessionExpired.listen((_) {
+    Future.microtask(() => appRouter.go('/session-expired'));
+  });
+
   runApp(const FintechRemittanceApp());
 }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/data/session_manager.dart';
 
 /// Response returned after a successful user registration.
 class RegisterResponse {
@@ -80,6 +81,14 @@ abstract class AuthRemoteDataSource {
     required String usernameOrEmail,
     required String password,
   });
+
+  /// Claims the one-time welcome bonus.
+  /// Throws [Exception] on failure.
+  Future<Map<String, dynamic>> claimWelcomeBonus();
+
+  /// Fetches the authenticated user profile.
+  /// Throws [Exception] on failure.
+  Future<Map<String, dynamic>> fetchMe();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -159,6 +168,56 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           ? (json['message'] ?? json['error'] ?? 'Credenciales incorrectas')
           : 'Credenciales incorrectas';
       throw Exception(message.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> claimWelcomeBonus() async {
+    final token = SessionManager.instance.token;
+    if (token == null) throw Exception('No session token available');
+
+    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.claimWelcomeBonusEndpoint}');
+
+    final response = await client.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final json = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json['data'] as Map<String, dynamic>? ?? json;
+    } else {
+      final json = jsonDecode(utf8.decode(response.bodyBytes));
+      final message = json is Map
+          ? (json['message'] ?? json['error'] ?? 'Error al reclamar el bono')
+          : 'Error al reclamar el bono';
+      throw Exception(message.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> fetchMe() async {
+    final token = SessionManager.instance.token;
+    if (token == null) throw Exception('No session token available');
+
+    final url = Uri.parse('${AppConstants.baseUrl}${AppConstants.meEndpoint}');
+
+    final response = await client.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json['data'] as Map<String, dynamic>? ?? json;
+    } else {
+      throw Exception('Failed to fetch user profile');
     }
   }
 }

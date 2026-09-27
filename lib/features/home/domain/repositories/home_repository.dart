@@ -6,4 +6,5 @@ abstract class HomeRepository {
   Future<WalletSummary> getWalletSummary();
   Future<List<TransactionPreview>> getRecentTransactions();
   Future<List<LedgerMovement>> getLedgerMovements();
+  Future<void> claimInitialBonus();
 }

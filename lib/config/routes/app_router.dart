@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/verify_otp_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
+import '../../features/auth/presentation/pages/session_expired_page.dart';
 import '../../features/history/presentation/bloc/history_bloc.dart';
 import '../../features/history/presentation/pages/history_page.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
@@ -83,6 +84,10 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/session-expired',
+      builder: (context, state) => const SessionExpiredPage(),
+    ),
+    GoRoute(
       path: '/kyc-start',
       builder: (context, state) => BlocProvider.value(
         value: sl<KycBloc>(),
@@ -110,6 +115,7 @@ final GoRouter appRouter = GoRouter(
         providers: [
           BlocProvider.value(value: sl<KycBloc>()),
           BlocProvider(create: (_) => sl<HomeBloc>()),
+          BlocProvider(create: (_) => sl<ProfileBloc>()..add(const LoadProfile())),
         ],
         child: MainLayout(child: child),
       ),
@@ -120,10 +126,7 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/transaction',
-          builder: (context, state) => BlocProvider(
-            create: (_) => sl<ProfileBloc>()..add(const LoadProfile()),
-            child: const TransactionPage(),
-          ),
+          builder: (context, state) => const TransactionPage(),
         ),
         GoRoute(
           path: '/deposit',
@@ -146,10 +149,7 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/profile',
-          builder: (context, state) => BlocProvider(
-            create: (_) => sl<ProfileBloc>(),
-            child: const ProfilePage(),
-          ),
+          builder: (context, state) => const ProfilePage(),
         ),
       ],
     ),

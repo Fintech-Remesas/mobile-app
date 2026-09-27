@@ -14,3 +14,7 @@ class LoadHome extends HomeEvent {
 class RefreshHome extends HomeEvent {
   const RefreshHome();
 }
+
+class ClaimInitialBonusEvent extends HomeEvent {
+  const ClaimInitialBonusEvent();
+}

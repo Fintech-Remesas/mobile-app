@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 class JwtDecoder {
@@ -20,6 +21,13 @@ class SessionManager {
 
   String? userId;
   String? token;
+
+  final _sessionExpiredController = StreamController<bool>.broadcast();
+  Stream<bool> get onSessionExpired => _sessionExpiredController.stream;
+
+  void notifySessionExpired() {
+    _sessionExpiredController.add(true);
+  }
 
   void setSession(String accessToken) {
     token = accessToken;

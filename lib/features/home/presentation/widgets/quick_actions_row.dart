@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../bloc/home_bloc.dart';
+import '../../../profile/presentation/bloc/profile_bloc.dart';
 
 class QuickActionsRow extends StatelessWidget {
   final bool enabled;
@@ -18,10 +19,28 @@ class QuickActionsRow extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: enabled ? () => context.push('/deposit') : null,
-                icon: const Icon(LucideIcons.arrowUpCircle),
-                label: const Text('Deposit'),
+              child: BlocBuilder<ProfileBloc, ProfileState>(
+                builder: (context, profileState) {
+                  final allowTestRecharge = profileState is ProfileLoaded && profileState.profile.allowTestRecharge;
+                  return ElevatedButton.icon(
+                    onPressed: enabled
+                        ? () {
+                            if (!allowTestRecharge) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Tu cuenta no tiene permisos para recargas ficticias.'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            } else {
+                              context.push('/deposit');
+                            }
+                          }
+                        : null,
+                    icon: const Icon(LucideIcons.arrowUpCircle),
+                    label: const Text('Deposit'),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -48,22 +67,7 @@ class QuickActionsRow extends StatelessWidget {
             foregroundColor: Colors.white,
           ),
         ),
-        const SizedBox(height: 16),
-        ElevatedButton.icon(
-          onPressed: enabled ? () async {
-            await context.push('/crypto-deposit');
-            if (context.mounted) {
-              context.read<HomeBloc>().add(const LoadHome());
-            }
-          } : null,
-          icon: const Icon(LucideIcons.bitcoin),
-          label: const Text('Recargar Crypto'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            backgroundColor: Colors.purple,
-            foregroundColor: Colors.white,
-          ),
-        ),
+
       ],
     );
   }

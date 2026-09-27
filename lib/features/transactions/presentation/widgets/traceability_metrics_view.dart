@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/data/session_manager.dart';
 
 /// Panel "Datos de Trazabilidad" — 9 elementos unitarios por remesa.
 /// Usa el backend para obtener datos, pero la verificación independiente
@@ -40,9 +41,14 @@ class _TraceabilityMetricsViewState extends State<TraceabilityMetricsView> {
     try {
       final remittanceId = widget.remittance.remittanceId;
       final url = Uri.parse(
-        '${AppConstants.web3SocketUrl}${AppConstants.unitaryMetricsEndpoint(remittanceId)}',
+        '${AppConstants.baseUrl}${AppConstants.unitaryMetricsEndpoint(remittanceId)}',
       );
-      final response = await http.get(url);
+      final token = SessionManager.instance.token;
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         if (mounted) {

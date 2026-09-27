@@ -41,6 +41,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       return WalletSummaryModel(
         balance: _parseDouble(data['balance']),
         currency: 'USD',
+        bonusEligible: data['bonusEligible'] == true,
       );
     } else {
       throw Exception(
