@@ -11,6 +11,7 @@ class TransactionDetailModel extends TransactionDetail {
     required super.blockNumber,
     required super.confirmationStatus,
     required super.blockTimestamp,
+    super.remittanceId,
   });
 
   factory TransactionDetailModel.fromJson(Map<String, dynamic> json) {
@@ -19,11 +20,12 @@ class TransactionDetailModel extends TransactionDetail {
       amount: (json['amount'] as num).toDouble(),
       status: json['status'] as String,
       recipient: json['recipient'] as String,
-      transactionHash: json['transactionHash'] as String,
-      network: json['network'] as String,
-      blockNumber: json['blockNumber'] as int,
-      confirmationStatus: json['confirmationStatus'] as String,
+      transactionHash: json['transactionHash'] as String? ?? '',
+      network: json['network'] as String? ?? 'amoyTestnet',
+      blockNumber: json['blockNumber'] as int? ?? 0,
+      confirmationStatus: json['confirmationStatus'] as String? ?? 'confirmed',
       blockTimestamp: DateTime.parse(json['blockTimestamp'] as String),
+      remittanceId: json['remittanceId'] as String?,
     );
   }
 }

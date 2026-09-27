@@ -189,8 +189,11 @@ class TransactionDetailPage extends StatelessWidget {
                         icon: const Icon(Icons.bar_chart, size: 24),
                         label: const Text('Ver Métricas de Trazabilidad', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         onPressed: () {
+                          final targetId = (detail.remittanceId != null && detail.remittanceId!.isNotEmpty)
+                              ? detail.remittanceId!
+                              : (detail.transactionHash.isNotEmpty ? detail.transactionHash : detail.id);
                           final mockRemittance = RemittanceModel(
-                            remittanceId: detail.id,
+                            remittanceId: targetId,
                             depositCode: '',
                             amountUSD: detail.amount.abs(),
                             feeAmount: 0,

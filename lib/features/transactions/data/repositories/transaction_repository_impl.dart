@@ -27,17 +27,20 @@ class TransactionRepositoryImpl implements TransactionRepository {
       final amount = _parseDouble(remoteData['amount']);
       final status = remoteData['status'] as String? ?? 'Completed';
       final recipient = remoteData['description'] as String? ?? remoteData['type'] as String? ?? 'N/A';
+      final remittanceId = remoteData['remittanceId'] as String?;
+      final transactionHash = remoteData['transactionHash'] as String? ?? '';
       
       return TransactionDetail(
         id: id,
         amount: amount,
         status: status,
         recipient: recipient,
-        transactionHash: '', // Not provided by endpoint
-        network: '',
+        transactionHash: transactionHash,
+        network: 'amoyTestnet',
         blockNumber: 0,
         confirmationStatus: 'confirmed',
         blockTimestamp: DateTime.parse(remoteData['createdAt'] as String),
+        remittanceId: remittanceId,
       );
     } catch (e) {
       // Fallback to local if needed, or just throw

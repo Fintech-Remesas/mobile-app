@@ -39,16 +39,27 @@ class _TraceabilityMetricsViewState extends State<TraceabilityMetricsView> {
 
   Future<void> _fetchUnitaryMetrics() async {
     try {
-      final remittanceId = widget.remittance.remittanceId;
+      final remittanceId = widget.remittance.remittanceId?.toString() ?? '';
+      final txHash = (widget.remittance.txHash ?? widget.remittance.blockchainTxHash)?.toString() ?? '';
+      final targetId = remittanceId.isNotEmpty ? remittanceId : txHash;
+
       final url = Uri.parse(
-        '${AppConstants.baseUrl}${AppConstants.unitaryMetricsEndpoint(remittanceId)}',
+        '${AppConstants.baseUrl}${AppConstants.unitaryMetricsEndpoint(targetId)}',
       );
       final token = SessionManager.instance.token;
       final headers = <String, String>{};
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }
-      final response = await http.get(url, headers: headers);
+      var response = await http.get(url, headers: headers);
+
+      // Fallback: Si da 404 y tenemos txHash disponible, reintentar con txHash
+      if (response.statusCode == 404 && txHash.isNotEmpty && targetId != txHash) {
+        final fallbackUrl = Uri.parse(
+          '${AppConstants.baseUrl}${AppConstants.unitaryMetricsEndpoint(txHash)}',
+        );
+        response = await http.get(fallbackUrl, headers: headers);
+      }
 
       if (response.statusCode == 200) {
         if (mounted) {

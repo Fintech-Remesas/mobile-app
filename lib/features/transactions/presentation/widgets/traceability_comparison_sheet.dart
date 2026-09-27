@@ -27,8 +27,6 @@ class TraceabilityComparisonSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
@@ -290,7 +288,7 @@ class TraceabilityComparisonSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Blockchain',
                       style: TextStyle(fontSize: 11, color: AppTheme.primaryBlue),
                     ),

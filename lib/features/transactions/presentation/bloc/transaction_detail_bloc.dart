@@ -32,9 +32,10 @@ class TransactionDetailBloc extends Bloc<TransactionDetailEvent, TransactionDeta
       );
       emit(TransactionDetailLoaded(detail));
       
-      // Auto-load metrics if it's a crypto transaction (e.g. has a transaction hash or is outgoing)
-      // We will try loading it based on the detail's ID since remittanceId is tied to it.
-      add(LoadTraceabilityMetrics(detail.id));
+      final targetId = (detail.remittanceId != null && detail.remittanceId!.isNotEmpty)
+          ? detail.remittanceId!
+          : (detail.transactionHash.isNotEmpty ? detail.transactionHash : detail.id);
+      add(LoadTraceabilityMetrics(targetId));
       
     } catch (e) {
       emit(TransactionDetailError(e.toString()));
