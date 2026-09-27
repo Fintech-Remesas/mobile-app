@@ -9,6 +9,7 @@ class AppConstants {
   // static const String baseUrl = 'http://10.0.2.2:8765';
   // static const String web3SocketUrl = 'ws://10.0.2.2:8765'; // api-gateway websocket proxy
   static const String apiPrefix = '/api/v1';
+  static const String registerEndpoint = '$apiPrefix/users/register';
   static const String loginEndpoint = '$apiPrefix/users/login';
 
   // Users endpoints
